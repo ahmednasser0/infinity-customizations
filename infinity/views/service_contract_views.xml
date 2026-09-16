@@ -1,0 +1,108 @@
+<odoo>
+    <data>
+
+        <record id="infinity_service_contract_view_list" model="ir.ui.view">
+            <field name="name">infinity.service.contract.list</field>
+            <field name="model">infinity.service.contract</field>
+            <field name="arch" type="xml">
+                <list>
+                    <field name="name"/>
+                    <field name="machine_serial_number"/>
+                    <field name="from_date"/>
+                    <field name="to_date"/>
+                    <field name="sla" widget="float_time"/>
+                    <field name="sla_unit"/>
+                    <field name="min_number_of_copies"/>
+                    <field name="max_number_of_copies"/>
+                    <field name="volume"/>
+                </list>
+            </field>
+        </record>
+
+        <record id="infinity_service_contract_view_form" model="ir.ui.view">
+            <field name="name">infinity.service.contract.form</field>
+            <field name="model">infinity.service.contract</field>
+            <field name="arch" type="xml">
+                <form>
+                    <sheet>
+                        <field name="contract_type_sla_sub_type" invisible="1"/>
+                        <group>
+                            <!-- what this contract is for -->
+                            <group>
+                                <field name="name"/>
+                                <field name="contract_type_abbreviation" readonly="1"/>
+                                <field name="contract_type_name" readonly="1"/>
+                                <field name="machine_serial_number"/>
+                            </group>
+                            <!-- and on what terms -->
+                            <group>
+                                <field name="from_date"/>
+                                <field name="to_date"/>
+                                <label for="sla"/>
+                                <div class="o_row">
+                                    <field name="sla" widget="float_time"/>
+                                    <field name="sla_unit" nolabel="1"/>
+                                </div>
+                                <field name="min_number_of_copies"/>
+                                <field name="max_number_of_copies"/>
+                            </group>
+                        </group>
+                        <group string="Details">
+                            <!-- how much the contract covers -->
+                            <group>
+                                <field name="limited_rv_visits"
+                                       invisible="contract_type_abbreviation != 'warranty' or contract_type_sla_sub_type not in ('w_supplier', 'w_infinity', 'w_service_provider', 'w_extend_infinity', 'w_extend_service_provider')"/>
+                                <field name="limited_pm_visits"
+                                       invisible="not ((contract_type_abbreviation == 'labor_annual_contract' and contract_type_sla_sub_type == 'labor_visits') or contract_type_abbreviation == 'service_maintenance_annual_contract' or (contract_type_abbreviation == 'full_service_maintenance_annual_contract' and contract_type_sla_sub_type in ('fsma_d', 'fsma_to', 'fsma_md')) or (contract_type_abbreviation == 'cost_per_click' and contract_type_sla_sub_type in ('leasing_insourcing', 'leasing_outsourcing', 'rental_insourcing', 'rental_outsourcing')))"/>
+                                <field name="limited_em_visits"
+                                       invisible="contract_type_abbreviation != 'labor_annual_contract' or contract_type_sla_sub_type != 'labor_visits'"/>
+                                <field name="unlimited_em_visits"
+                                       invisible="not ((contract_type_abbreviation == 'warranty' and contract_type_sla_sub_type in ('w_supplier', 'w_infinity', 'w_service_provider', 'w_extend_infinity', 'w_extend_service_provider')) or contract_type_abbreviation == 'service_maintenance_annual_contract' or (contract_type_abbreviation == 'full_service_maintenance_annual_contract' and contract_type_sla_sub_type in ('fsma_d', 'fsma_to', 'fsma_md')) or (contract_type_abbreviation == 'cost_per_click' and contract_type_sla_sub_type in ('leasing_insourcing', 'leasing_outsourcing', 'rental_insourcing', 'rental_outsourcing')))"/>
+                                <field name="hours"
+                                       invisible="contract_type_abbreviation != 'labor_annual_contract' or contract_type_sla_sub_type != 'labor_hours'"/>
+                                <field name="volume"
+                                       invisible="contract_type_abbreviation != 'cost_per_click' or contract_type_sla_sub_type not in ('leasing_insourcing', 'leasing_outsourcing', 'rental_insourcing', 'rental_outsourcing')"/>
+                            </group>
+                            <!-- and what it includes -->
+                            <group>
+                                <field name="spare_parts"
+                                       invisible="not ((contract_type_abbreviation == 'warranty' and contract_type_sla_sub_type in ('w_supplier', 'w_infinity', 'w_service_provider')) or contract_type_abbreviation == 'service_maintenance_annual_contract' or (contract_type_abbreviation == 'full_service_maintenance_annual_contract' and contract_type_sla_sub_type in ('fsma_d', 'fsma_to', 'fsma_md')) or (contract_type_abbreviation == 'cost_per_click' and contract_type_sla_sub_type in ('leasing_insourcing', 'leasing_outsourcing', 'rental_insourcing', 'rental_outsourcing')))"/>
+                                <field name="pm_parts"
+                                       invisible="not (contract_type_abbreviation == 'service_maintenance_annual_contract' or (contract_type_abbreviation == 'full_service_maintenance_annual_contract' and contract_type_sla_sub_type in ('fsma_d', 'fsma_to', 'fsma_md')) or (contract_type_abbreviation == 'cost_per_click' and contract_type_sla_sub_type in ('leasing_insourcing', 'leasing_outsourcing', 'rental_insourcing', 'rental_outsourcing')))"/>
+                                <field name="consumables_including_image_unit"
+                                       invisible="not ((contract_type_abbreviation == 'full_service_maintenance_annual_contract' and contract_type_sla_sub_type in ('fsma_d', 'fsma_md')) or (contract_type_abbreviation == 'cost_per_click' and contract_type_sla_sub_type in ('leasing_insourcing', 'leasing_outsourcing', 'rental_insourcing', 'rental_outsourcing')))"/>
+                                <field name="consumables_excluding_image_unit"
+                                       invisible="contract_type_abbreviation != 'full_service_maintenance_annual_contract' or contract_type_sla_sub_type != 'fsma_to'"/>
+                                <field name="plain_media"
+                                       invisible="contract_type_abbreviation != 'full_service_maintenance_annual_contract' or contract_type_sla_sub_type != 'fsma_md'"/>
+                                <field name="pre_printed_media"
+                                       invisible="contract_type_abbreviation != 'full_service_maintenance_annual_contract' or contract_type_sla_sub_type != 'fsma_md'"/>
+                                <field name="operators"
+                                       invisible="contract_type_abbreviation != 'cost_per_click' or contract_type_sla_sub_type not in ('leasing_insourcing', 'leasing_outsourcing', 'rental_insourcing', 'rental_outsourcing')"/>
+                                <field name="owned_machines"
+                                       invisible="contract_type_abbreviation != 'cost_per_click' or contract_type_sla_sub_type not in ('leasing_insourcing', 'leasing_outsourcing')"/>
+                                <field name="machines_rent"
+                                       invisible="contract_type_abbreviation != 'cost_per_click' or contract_type_sla_sub_type not in ('rental_insourcing', 'rental_outsourcing')"/>
+                                <field name="site"
+                                       invisible="contract_type_abbreviation != 'cost_per_click' or contract_type_sla_sub_type not in ('leasing_outsourcing', 'rental_outsourcing')"/>
+                            </group>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="infinity_action_service_contract" model="ir.actions.act_window">
+            <field name="name">Service Contracts</field>
+            <field name="res_model">infinity.service.contract</field>
+            <field name="view_mode">list,form</field>
+        </record>
+
+        <menuitem id="menu_infinity_service_contracts"
+                  name="Service Contracts"
+                  parent="menu_infinity_contract_configuration"
+                  action="infinity_action_service_contract"
+                  sequence="10"/>
+
+    </data>
+</odoo>

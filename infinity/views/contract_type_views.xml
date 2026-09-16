@@ -1,0 +1,67 @@
+<odoo>
+    <data>
+
+        <record id="infinity_contract_type_view_list" model="ir.ui.view">
+            <field name="name">infinity.contract.type.list</field>
+            <field name="model">infinity.contract.type</field>
+            <field name="arch" type="xml">
+                <list>
+                    <field name="abbreviation"/>
+                    <field name="name"/>
+                </list>
+            </field>
+        </record>
+
+        <record id="infinity_contract_type_view_form" model="ir.ui.view">
+            <field name="name">infinity.contract.type.form</field>
+            <field name="model">infinity.contract.type</field>
+            <field name="arch" type="xml">
+                <form>
+                    <sheet>
+                        <group>
+                            <field name="abbreviation"/>
+                            <field name="name"/>
+                            <field name="warranty_sub_type"
+                                   invisible="abbreviation != 'warranty'"
+                                   required="abbreviation == 'warranty'"/>
+                            <field name="labor_sub_type"
+                                   invisible="abbreviation != 'labor_annual_contract'"
+                                   required="abbreviation == 'labor_annual_contract'"/>
+                            <field name="service_maintenance_sub_type"
+                                   invisible="abbreviation != 'service_maintenance_annual_contract'"
+                                   required="abbreviation == 'service_maintenance_annual_contract'"/>
+                            <field name="fsma_sub_type"
+                                   invisible="abbreviation != 'full_service_maintenance_annual_contract'"
+                                   required="abbreviation == 'full_service_maintenance_annual_contract'"/>
+                            <field name="cost_per_click_sub_type"
+                                   invisible="abbreviation != 'cost_per_click'"
+                                   required="abbreviation == 'cost_per_click'"/>
+                            <field name="time_material_sub_type"
+                                   invisible="abbreviation != 'time_material'"
+                                   required="abbreviation == 'time_material'"/>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="infinity_action_contract_type" model="ir.actions.act_window">
+            <field name="name">Contract Types</field>
+            <field name="res_model">infinity.contract.type</field>
+            <field name="view_mode">list,form</field>
+        </record>
+
+        <!-- Menu: Contract Management (top-level tab inside the Project app, right after Tasks) -->
+        <menuitem id="menu_infinity_contract_configuration"
+                  name="Contract Management"
+                  parent="project.menu_main_pm"
+                  sequence="3"/>
+
+        <menuitem id="menu_infinity_contract_types"
+                  name="Contract Types"
+                  parent="menu_infinity_contract_configuration"
+                  action="infinity_action_contract_type"
+                  sequence="30"/>
+
+    </data>
+</odoo>

@@ -1,0 +1,342 @@
+<odoo>
+    <data>
+
+        <!-- Agreement form: opened from the Task's "Agreement" button -->
+        <record id="infinity_technical_report_view_form_agreement" model="ir.ui.view">
+            <field name="name">infinity.technical.report.form.agreement</field>
+            <field name="model">infinity.technical.report</field>
+            <field name="priority">10</field>
+            <field name="arch" type="xml">
+                <form create="false" delete="false" duplicate="false">
+                    <sheet>
+                        <field name="task_id" invisible="1"/>
+                        <field name="report_type" invisible="1"/>
+                        <field name="name" invisible="1"/>
+                        <!-- Say why there is no contract, rather than showing
+                             an empty screen -->
+                        <div class="alert alert-warning" role="alert"
+                             invisible="not agreement_block_reason">
+                            <field name="agreement_block_reason" nolabel="1" readonly="1"/>
+                        </div>
+                        <group>
+                            <group>
+                                <field name="task_name"/>
+                                <field name="task_project_id"/>
+                                <field name="agreement_allowed_order_ids" invisible="1"/>
+                                <field name="agreement_sale_order_id"
+                                       domain="[('id', 'in', agreement_allowed_order_ids)]"
+                                       options="{'no_create': True}"/>
+                            </group>
+                            <group>
+                                <field name="agreement_partner_id" readonly="1"/>
+                                <field name="agreement_contact_id" readonly="1"/>
+                                <field name="agreement_phone" widget="phone"/>
+                                <field name="agreement_email" widget="email"/>
+                            </group>
+                        </group>
+                        <field name="agreement_sub_type_value" invisible="1"/>
+                        <group string="Contract Information"
+                               invisible="not agreement_sale_order_id">
+                            <!-- what this contract is for -->
+                            <group>
+                                <field name="agreement_service_contract_id"/>
+                                <field name="agreement_full_name"/>
+                                <field name="agreement_abbreviation"/>
+                                <field name="agreement_machine_serial_number"/>
+                            </group>
+                            <!-- and on what terms -->
+                            <group>
+                                <field name="agreement_from_date"/>
+                                <field name="agreement_to_date"/>
+                                <label for="agreement_sla"/>
+                                <div class="o_row">
+                                    <field name="agreement_sla" widget="float_time"/>
+                                    <field name="agreement_sla_unit" nolabel="1"/>
+                                </div>
+                                <field name="agreement_min_number_of_copies"/>
+                                <field name="agreement_max_number_of_copies"/>
+                            </group>
+                        </group>
+                        <group string="Details" invisible="not agreement_sale_order_id">
+                            <!-- how much the contract covers -->
+                            <group>
+                                <field name="agreement_limited_rv_visits"
+                                       invisible="agreement_full_name != 'warranty' or agreement_sub_type_value not in ('w_supplier', 'w_infinity', 'w_service_provider', 'w_extend_infinity', 'w_extend_service_provider')"/>
+                                <field name="agreement_limited_pm_visits"
+                                       invisible="not ((agreement_full_name == 'labor_annual_contract' and agreement_sub_type_value == 'labor_visits') or agreement_full_name == 'service_maintenance_annual_contract' or (agreement_full_name == 'full_service_maintenance_annual_contract' and agreement_sub_type_value in ('fsma_d', 'fsma_to', 'fsma_md')) or (agreement_full_name == 'cost_per_click' and agreement_sub_type_value in ('leasing_insourcing', 'leasing_outsourcing', 'rental_insourcing', 'rental_outsourcing')))"/>
+                                <field name="agreement_limited_em_visits"
+                                       invisible="agreement_full_name != 'labor_annual_contract' or agreement_sub_type_value != 'labor_visits'"/>
+                                <field name="agreement_unlimited_em_visits"
+                                       invisible="not ((agreement_full_name == 'warranty' and agreement_sub_type_value in ('w_supplier', 'w_infinity', 'w_service_provider', 'w_extend_infinity', 'w_extend_service_provider')) or agreement_full_name == 'service_maintenance_annual_contract' or (agreement_full_name == 'full_service_maintenance_annual_contract' and agreement_sub_type_value in ('fsma_d', 'fsma_to', 'fsma_md')) or (agreement_full_name == 'cost_per_click' and agreement_sub_type_value in ('leasing_insourcing', 'leasing_outsourcing', 'rental_insourcing', 'rental_outsourcing')))"/>
+                                <field name="agreement_hours"
+                                       invisible="agreement_full_name != 'labor_annual_contract' or agreement_sub_type_value != 'labor_hours'"/>
+                                <field name="agreement_volume"
+                                       invisible="agreement_full_name != 'cost_per_click' or agreement_sub_type_value not in ('leasing_insourcing', 'leasing_outsourcing', 'rental_insourcing', 'rental_outsourcing')"/>
+                            </group>
+                            <!-- and what it includes -->
+                            <group>
+                                <field name="agreement_spare_parts"
+                                       invisible="not ((agreement_full_name == 'warranty' and agreement_sub_type_value in ('w_supplier', 'w_infinity', 'w_service_provider')) or agreement_full_name == 'service_maintenance_annual_contract' or (agreement_full_name == 'full_service_maintenance_annual_contract' and agreement_sub_type_value in ('fsma_d', 'fsma_to', 'fsma_md')) or (agreement_full_name == 'cost_per_click' and agreement_sub_type_value in ('leasing_insourcing', 'leasing_outsourcing', 'rental_insourcing', 'rental_outsourcing')))"/>
+                                <field name="agreement_pm_parts"
+                                       invisible="not (agreement_full_name == 'service_maintenance_annual_contract' or (agreement_full_name == 'full_service_maintenance_annual_contract' and agreement_sub_type_value in ('fsma_d', 'fsma_to', 'fsma_md')) or (agreement_full_name == 'cost_per_click' and agreement_sub_type_value in ('leasing_insourcing', 'leasing_outsourcing', 'rental_insourcing', 'rental_outsourcing')))"/>
+                                <field name="agreement_consumables_including_image_unit"
+                                       invisible="not ((agreement_full_name == 'full_service_maintenance_annual_contract' and agreement_sub_type_value in ('fsma_d', 'fsma_md')) or (agreement_full_name == 'cost_per_click' and agreement_sub_type_value in ('leasing_insourcing', 'leasing_outsourcing', 'rental_insourcing', 'rental_outsourcing')))"/>
+                                <field name="agreement_consumables_excluding_image_unit"
+                                       invisible="agreement_full_name != 'full_service_maintenance_annual_contract' or agreement_sub_type_value != 'fsma_to'"/>
+                                <field name="agreement_plain_media"
+                                       invisible="agreement_full_name != 'full_service_maintenance_annual_contract' or agreement_sub_type_value != 'fsma_md'"/>
+                                <field name="agreement_pre_printed_media"
+                                       invisible="agreement_full_name != 'full_service_maintenance_annual_contract' or agreement_sub_type_value != 'fsma_md'"/>
+                                <field name="agreement_operators"
+                                       invisible="agreement_full_name != 'cost_per_click' or agreement_sub_type_value not in ('leasing_insourcing', 'leasing_outsourcing', 'rental_insourcing', 'rental_outsourcing')"/>
+                                <field name="agreement_owned_machines"
+                                       invisible="agreement_full_name != 'cost_per_click' or agreement_sub_type_value not in ('leasing_insourcing', 'leasing_outsourcing')"/>
+                                <field name="agreement_machines_rent"
+                                       invisible="agreement_full_name != 'cost_per_click' or agreement_sub_type_value not in ('rental_insourcing', 'rental_outsourcing')"/>
+                                <field name="agreement_site"
+                                       invisible="agreement_full_name != 'cost_per_click' or agreement_sub_type_value not in ('leasing_outsourcing', 'rental_outsourcing')"/>
+                            </group>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <!-- Visit History form: opened from the Task's "Visit History" button -->
+        <record id="infinity_technical_report_view_form_visit_history" model="ir.ui.view">
+            <field name="name">infinity.technical.report.form.visit_history</field>
+            <field name="model">infinity.technical.report</field>
+            <field name="priority">20</field>
+            <field name="arch" type="xml">
+                <form create="false" delete="false" duplicate="false">
+                    <sheet>
+                        <field name="task_id" invisible="1"/>
+                        <field name="report_type" invisible="1"/>
+                        <field name="name" invisible="1"/>
+                        <field name="task_create_date" invisible="1"/>
+                        <group string="Visit History">
+                            <field name="task_project_id"/>
+                            <field name="visit_report_id"
+                                   domain="[('report_type', '=', 'technical_report'),
+                                            ('task_id.project_id', '=', task_project_id),
+                                            ('task_id', '!=', task_id),
+                                            ('task_id.create_date', '&lt;', task_create_date)]"
+                                   options="{'no_create': True, 'no_open': True}"/>
+                        </group>
+                        <group invisible="not visit_report_id">
+                            <group string="Visit Details">
+                                <field name="visit_task_name"/>
+                                <field name="visit_project_id"/>
+                                <field name="visit_partner_id"/>
+                                <field name="visit_stage_id"/>
+                                <field name="visit_date_deadline"/>
+                            </group>
+                            <group string="Assignees">
+                                <field name="visit_user_ids" widget="many2many_tags"/>
+                                <field name="visit_pre_dispatch_ids" widget="many2many_tags"/>
+                                <field name="visit_hard_dispatch_id"/>
+                            </group>
+                        </group>
+                        <group string="Description" invisible="not visit_report_id">
+                            <field name="visit_description" nolabel="1"/>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <!-- Technical Report form: opened from the Task's "Technical Report" button -->
+        <record id="infinity_technical_report_view_form_technical_report" model="ir.ui.view">
+            <field name="name">infinity.technical.report.form.technical_report</field>
+            <field name="model">infinity.technical.report</field>
+            <field name="priority">30</field>
+            <field name="arch" type="xml">
+                <form create="false" delete="false" duplicate="false">
+                    <header>
+                        <!-- The same report the Print menu offers, put
+                             where an engineer finishing a visit will look for
+                             it. It calls a method, so the action is found
+                             when the button is pressed; naming the action in
+                             the view instead makes Odoo resolve it while the
+                             view loads, and a view that cannot find it takes
+                             the whole module down with it.
+
+                             Note there is no percent-bracket token anywhere
+                             above: Odoo scans the whole arch for them, XML
+                             comments included, and tries to resolve whatever
+                             it finds as an external id. -->
+                        <button name="action_print_technical_report"
+                                string="Print" type="object" class="btn-primary"/>
+                    </header>
+                    <sheet>
+                        <field name="task_id" invisible="1"/>
+                        <field name="report_type" invisible="1"/>
+                        <field name="name" invisible="1"/>
+                        <!-- who the visit is for. The same four the Agreement
+                             shows, off the same Sales Order: the company, the
+                             person to ask for, and how to reach them. -->
+                        <group string="Customer Information">
+                            <group>
+                                <!-- the same field the Agreement calls
+                                     Customer; on a report going out to site
+                                     it is the legal name that matters -->
+                                <field name="agreement_partner_id" readonly="1"
+                                       string="Legal Name"/>
+                                <field name="agreement_contact_id" readonly="1"/>
+                            </group>
+                            <group>
+                                <field name="agreement_phone" widget="phone"/>
+                                <field name="agreement_email" widget="email"/>
+                                <field name="agreement_address"/>
+                            </group>
+                        </group>
+                        <group>
+                            <!-- who went -->
+                            <group>
+                                <field name="task_hard_dispatch_id"/>
+                                <field name="task_actual_engineer_id_code" readonly="1"
+                                       context="{'show_actual_engineer_id': True}"/>
+                            </group>
+                            <!-- and what this report is -->
+                            <group>
+                                <field name="task_no"/>
+                                <field name="work_order_no"/>
+                                <field name="serial_number"/>
+                                <field name="visit_count"/>
+                            </group>
+                        </group>
+                        <!-- readings taken on site, a line per machine -->
+                        <!-- what the visit took -->
+                        <group string="Time">
+                            <group>
+                                <field name="work_time_hours"/>
+                            </group>
+                            <group>
+                                <field name="travel_time_hours"/>
+                            </group>
+                        </group>
+                        <!-- The lines are found, not chosen: the report
+                             works out the machines from the orders behind its
+                             own task. Columns come from machine_data_views.xml
+                             so the table and the form agree. -->
+                        <separator string="Machine Data"/>
+                        <field name="machine_data_ids" nolabel="1"/>
+                        <!-- Free text goes straight under the sheet rather
+                             than inside a group: an empty Html or Text field
+                             in a group cell collapses to nothing, which is no
+                             use to somebody who has come here to write in it.
+                             The placeholder keeps the box visible when empty. -->
+                        <!-- what was asked for, and what actually went in -
+                             side by side, since the two are read against each
+                             other -->
+                        <group>
+                            <group string="Spare Parts Requested">
+                                <field name="spare_requested_ids" nolabel="1"
+                                       colspan="2"/>
+                            </group>
+                            <group string="Spare Parts Installed">
+                                <field name="spare_installed_ids" nolabel="1"
+                                       colspan="2"/>
+                            </group>
+                        </group>
+                        <!-- The engineer's account and the customer's, one
+                             against the other. Both carry a placeholder: an
+                             empty text box in a group cell collapses to
+                             nothing, and a box nobody can see is a box nobody
+                             writes in. -->
+                        <group>
+                            <group string="Technical Diagnosis">
+                                <field name="technical_diagnosis" nolabel="1"
+                                       colspan="2" widget="html"
+                                       placeholder="What was found, and what was done about it..."/>
+                            </group>
+                            <group string="Customer Comments">
+                                <field name="customer_comments" nolabel="1"
+                                       colspan="2"
+                                       placeholder="Anything the customer wanted noted..."/>
+                            </group>
+                        </group>
+                        <!-- signed off on site -->
+                        <!-- size is [width, height]; 0 leaves the width to
+                             the column and 90px keeps a signature to a strip
+                             rather than a panel -->
+                        <group string="Signatures">
+                            <group>
+                                <field name="fse_signature" widget="signature"
+                                       options="{'size': [0, 90]}"/>
+                            </group>
+                            <group>
+                                <field name="customer_signature" widget="signature"
+                                       options="{'size': [0, 90]}"/>
+                            </group>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <!-- Technical Reports: every technical-report record across all projects -->
+        <record id="infinity_technical_report_view_list_all" model="ir.ui.view">
+            <field name="name">infinity.technical.report.list.all</field>
+            <field name="model">infinity.technical.report</field>
+            <field name="arch" type="xml">
+                <list string="Technical Reports" create="false" delete="false">
+                    <field name="task_project_id"/>
+                    <field name="task_name"/>
+                    <field name="task_visit_type"/>
+                    <field name="task_partner_id"/>
+                    <field name="task_stage_id"/>
+                    <field name="task_date_deadline"/>
+                    <field name="task_create_date"/>
+                </list>
+            </field>
+        </record>
+
+        <record id="infinity_technical_report_view_search_all" model="ir.ui.view">
+            <field name="name">infinity.technical.report.search.all</field>
+            <field name="model">infinity.technical.report</field>
+            <field name="arch" type="xml">
+                <search string="Technical Reports">
+                    <field name="task_name"/>
+                    <field name="task_project_id"/>
+                    <field name="task_partner_id"/>
+                    <filter name="groupby_project" string="Project" context="{'group_by': 'task_project_id'}"/>
+                    <filter name="groupby_customer" string="Customer" context="{'group_by': 'task_partner_id'}"/>
+                    <filter name="groupby_stage" string="Stage" context="{'group_by': 'task_stage_id'}"/>
+                    <filter name="groupby_visit_type" string="Visit Type" context="{'group_by': 'task_visit_type'}"/>
+                </search>
+            </field>
+        </record>
+
+        <record id="infinity_action_technical_report" model="ir.actions.act_window">
+            <field name="name">Technical Reports</field>
+            <field name="res_model">infinity.technical.report</field>
+            <field name="view_mode">list,form</field>
+            <field name="domain">[('report_type', '=', 'technical_report')]</field>
+            <field name="context">{'create': False, 'delete': False}</field>
+            <field name="search_view_id" ref="infinity_technical_report_view_search_all"/>
+        </record>
+
+        <record id="infinity_action_technical_report_list" model="ir.actions.act_window.view">
+            <field name="sequence">10</field>
+            <field name="view_mode">list</field>
+            <field name="view_id" ref="infinity_technical_report_view_list_all"/>
+            <field name="act_window_id" ref="infinity_action_technical_report"/>
+        </record>
+
+        <record id="infinity_action_technical_report_form" model="ir.actions.act_window.view">
+            <field name="sequence">20</field>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="infinity_technical_report_view_form_technical_report"/>
+            <field name="act_window_id" ref="infinity_action_technical_report"/>
+        </record>
+
+        <menuitem id="menu_infinity_technical_report"
+                  name="Visits History"
+                  parent="project.menu_project_management"
+                  action="infinity_action_technical_report"
+                  sequence="50"/>
+
+
+    </data>
+</odoo>

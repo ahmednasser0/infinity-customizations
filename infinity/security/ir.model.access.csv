@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_infinity_service_contract,infinity.service.contract,model_infinity_service_contract,base.group_user,1,1,1,1
+access_infinity_contract_type,infinity.contract.type,model_infinity_contract_type,base.group_user,1,1,1,1
+access_infinity_technical_report,infinity.technical.report,model_infinity_technical_report,base.group_user,1,1,1,1
+access_infinity_machine_data,infinity.machine.data,model_infinity_machine_data,base.group_user,1,1,1,1
+access_infinity_spare_requested,infinity.technical.report.spare.requested,model_infinity_technical_report_spare_requested,base.group_user,1,1,1,1
+access_infinity_spare_installed,infinity.technical.report.spare.installed,model_infinity_technical_report_spare_installed,base.group_user,1,1,1,1

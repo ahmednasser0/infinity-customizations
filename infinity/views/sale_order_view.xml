@@ -1,0 +1,71 @@
+<odoo>
+    <data>
+
+        <record id="infinity_sale_order_view_form_inherit" model="ir.ui.view">
+            <field name="name">sale.order.form.infinity.contract.selection</field>
+            <field name="model">sale.order</field>
+            <field name="inherit_id" ref="sale.view_order_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//notebook" position="inside">
+                    <page string="Contract Selection" name="infinity_contract_selection">
+                        <group>
+                            <field name="service_contract_id"/>
+                            <field name="service_contract_full_name"/>
+                            <field name="service_contract_abbreviation"/>
+                            <field name="service_contract_sub_type_value" invisible="1"/>
+                        </group>
+                        <group string="Service Contract" invisible="not service_contract_id">
+                            <group>
+                                <field name="service_contract_machine_serial_number"/>
+                                <field name="service_contract_from_date"/>
+                                <field name="service_contract_to_date"/>
+                                <label for="service_contract_sla"/>
+                                <div class="o_row">
+                                    <field name="service_contract_sla" widget="float_time"/>
+                                    <field name="service_contract_sla_unit" nolabel="1"/>
+                                </div>
+                                <field name="service_contract_min_number_of_copies"/>
+                                <field name="service_contract_max_number_of_copies"/>
+                            </group>
+                            <group string="Details">
+                            <field name="service_contract_limited_rv_visits"
+                                   invisible="service_contract_full_name != 'warranty' or service_contract_sub_type_value not in ('w_supplier', 'w_infinity', 'w_service_provider', 'w_extend_infinity', 'w_extend_service_provider')"/>
+                            <field name="service_contract_unlimited_em_visits"
+                                   invisible="not ((service_contract_full_name == 'warranty' and service_contract_sub_type_value in ('w_supplier', 'w_infinity', 'w_service_provider', 'w_extend_infinity', 'w_extend_service_provider')) or service_contract_full_name == 'service_maintenance_annual_contract' or (service_contract_full_name == 'full_service_maintenance_annual_contract' and service_contract_sub_type_value in ('fsma_d', 'fsma_to', 'fsma_md')) or (service_contract_full_name == 'cost_per_click' and service_contract_sub_type_value in ('leasing_insourcing', 'leasing_outsourcing', 'rental_insourcing', 'rental_outsourcing')))"/>
+                            <field name="service_contract_spare_parts"
+                                   invisible="not ((service_contract_full_name == 'warranty' and service_contract_sub_type_value in ('w_supplier', 'w_infinity', 'w_service_provider')) or service_contract_full_name == 'service_maintenance_annual_contract' or (service_contract_full_name == 'full_service_maintenance_annual_contract' and service_contract_sub_type_value in ('fsma_d', 'fsma_to', 'fsma_md')) or (service_contract_full_name == 'cost_per_click' and service_contract_sub_type_value in ('leasing_insourcing', 'leasing_outsourcing', 'rental_insourcing', 'rental_outsourcing')))"/>
+                            <field name="service_contract_volume"
+                                   invisible="service_contract_full_name != 'cost_per_click' or service_contract_sub_type_value not in ('leasing_insourcing', 'leasing_outsourcing', 'rental_insourcing', 'rental_outsourcing')"/>
+                            <field name="service_contract_limited_pm_visits"
+                                   invisible="not ((service_contract_full_name == 'labor_annual_contract' and service_contract_sub_type_value == 'labor_visits') or service_contract_full_name == 'service_maintenance_annual_contract' or (service_contract_full_name == 'full_service_maintenance_annual_contract' and service_contract_sub_type_value in ('fsma_d', 'fsma_to', 'fsma_md')) or (service_contract_full_name == 'cost_per_click' and service_contract_sub_type_value in ('leasing_insourcing', 'leasing_outsourcing', 'rental_insourcing', 'rental_outsourcing')))"/>
+                            <field name="service_contract_limited_em_visits"
+                                   invisible="service_contract_full_name != 'labor_annual_contract' or service_contract_sub_type_value != 'labor_visits'"/>
+                            <field name="service_contract_hours"
+                                   invisible="service_contract_full_name != 'labor_annual_contract' or service_contract_sub_type_value != 'labor_hours'"/>
+                            <field name="service_contract_pm_parts"
+                                   invisible="not (service_contract_full_name == 'service_maintenance_annual_contract' or (service_contract_full_name == 'full_service_maintenance_annual_contract' and service_contract_sub_type_value in ('fsma_d', 'fsma_to', 'fsma_md')) or (service_contract_full_name == 'cost_per_click' and service_contract_sub_type_value in ('leasing_insourcing', 'leasing_outsourcing', 'rental_insourcing', 'rental_outsourcing')))"/>
+                            <field name="service_contract_consumables_including_image_unit"
+                                   invisible="not ((service_contract_full_name == 'full_service_maintenance_annual_contract' and service_contract_sub_type_value in ('fsma_d', 'fsma_md')) or (service_contract_full_name == 'cost_per_click' and service_contract_sub_type_value in ('leasing_insourcing', 'leasing_outsourcing', 'rental_insourcing', 'rental_outsourcing')))"/>
+                            <field name="service_contract_consumables_excluding_image_unit"
+                                   invisible="service_contract_full_name != 'full_service_maintenance_annual_contract' or service_contract_sub_type_value != 'fsma_to'"/>
+                            <field name="service_contract_plain_media"
+                                   invisible="service_contract_full_name != 'full_service_maintenance_annual_contract' or service_contract_sub_type_value != 'fsma_md'"/>
+                            <field name="service_contract_pre_printed_media"
+                                   invisible="service_contract_full_name != 'full_service_maintenance_annual_contract' or service_contract_sub_type_value != 'fsma_md'"/>
+                            <field name="service_contract_operators"
+                                   invisible="service_contract_full_name != 'cost_per_click' or service_contract_sub_type_value not in ('leasing_insourcing', 'leasing_outsourcing', 'rental_insourcing', 'rental_outsourcing')"/>
+                            <field name="service_contract_owned_machines"
+                                   invisible="service_contract_full_name != 'cost_per_click' or service_contract_sub_type_value not in ('leasing_insourcing', 'leasing_outsourcing')"/>
+                            <field name="service_contract_site"
+                                   invisible="service_contract_full_name != 'cost_per_click' or service_contract_sub_type_value not in ('leasing_outsourcing', 'rental_outsourcing')"/>
+                            <field name="service_contract_machines_rent"
+                                   invisible="service_contract_full_name != 'cost_per_click' or service_contract_sub_type_value not in ('rental_insourcing', 'rental_outsourcing')"/>
+                            </group>
+                        </group>
+                    </page>
+                </xpath>
+            </field>
+        </record>
+
+    </data>
+</odoo>

@@ -1,0 +1,74 @@
+<odoo>
+    <data>
+
+        <!-- Rename the "Assignees" field label to "Dispatcher" on the Task form view -->
+        <record id="view_task_form2_inherit_infinity" model="ir.ui.view">
+            <field name="name">project.task.form.inherit.infinity</field>
+            <field name="model">project.task</field>
+            <field name="inherit_id" ref="project.view_task_form2"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='user_ids']" position="attributes">
+                    <attribute name="string">Dispatcher</attribute>
+                </xpath>
+                <xpath expr="//field[@name='user_ids']" position="after">
+                    <field name="pre_dispatch_ids" widget="many2many_tags"/>
+                    <field name="hard_dispatch_id"/>
+                    <field name="actual_engineer_id_code" readonly="1"
+                           context="{'show_actual_engineer_id': True}"/>
+                    <field name="fse_accompany_id"/>
+                </xpath>
+                <xpath expr="//field[@name='project_id']" position="after">
+                    <field name="visit_type"/>
+                </xpath>
+
+                <xpath expr="//field[@name='partner_id']" position="after">
+                    <field name="bear_labor_cost" widget="boolean_toggle"/>
+                    <field name="labor_cost_account_id"/>
+                    <field name="clearing_account_id"/>
+                </xpath>
+
+                <!-- Smart buttons to open this task's Agreement / Visit History records -->
+                <xpath expr="//div[hasclass('oe_button_box')]" position="inside">
+                    <!-- Visits of the selected type this project has had for
+                         this customer, against what the contract on the Sales
+                         Order allows - click through to see them -->
+                    <button type="object" name="action_open_visit_count"
+                            class="oe_stat_button" icon="fa-map-marker"
+                            invisible="visit_type not in ('pm', 'emergency', 'rv')">
+                        <div class="o_stat_info">
+                            <field name="visit_count_display" class="o_stat_value"/>
+                            <field name="visit_count_label" class="o_stat_text"/>
+                        </div>
+                    </button>
+                    <button type="object" name="action_open_agreement" class="oe_stat_button" icon="fa-file-text-o">
+                        <span class="o_stat_text">Agreement</span>
+                    </button>
+                    <button type="object" name="action_open_visit_history" class="oe_stat_button" icon="fa-history">
+                        <span class="o_stat_text">Visit History</span>
+                    </button>
+                    <button type="object" name="action_open_technical_report" class="oe_stat_button" icon="fa-wrench">
+                        <span class="o_stat_text">Technical Report</span>
+                    </button>
+                </xpath>
+            </field>
+        </record>
+
+        <!-- Add Dispatcher / Planned Engineer / Actual Engineer to the Task search & filter panel -->
+        <record id="view_task_search_form_inherit_infinity" model="ir.ui.view">
+            <field name="name">project.task.search.inherit.infinity</field>
+            <field name="model">project.task</field>
+            <field name="inherit_id" ref="project.view_task_search_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//search" position="inside">
+                    <field name="user_ids" string="Dispatcher"/>
+                    <field name="pre_dispatch_ids" string="Planned Engineer"/>
+                    <field name="hard_dispatch_id" string="Actual Engineer"/>
+                    <filter name="infinity_groupby_dispatcher" string="Dispatcher" context="{'group_by': 'user_ids'}"/>
+                    <filter name="infinity_groupby_pre_dispatch" string="Planned Engineer" context="{'group_by': 'pre_dispatch_ids'}"/>
+                    <filter name="infinity_groupby_hard_dispatch" string="Actual Engineer" context="{'group_by': 'hard_dispatch_id'}"/>
+                </xpath>
+            </field>
+        </record>
+
+    </data>
+</odoo>

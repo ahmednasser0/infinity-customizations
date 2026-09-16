@@ -1,0 +1,53 @@
+<odoo>
+    <data>
+
+        <!-- The readings themselves: laid out once here, so the list inside
+             the Technical Report and the form a line opens in agree.
+
+             Nothing on a line names its machine - the report works that out
+             from the orders behind its own task. All that is left to fill in
+             are the four readings, so widths go to those. -->
+        <record id="infinity_machine_data_view_list" model="ir.ui.view">
+            <field name="name">infinity.machine.data.list</field>
+            <field name="model">infinity.machine.data</field>
+            <field name="arch" type="xml">
+                <list editable="bottom" create="false" delete="false">
+                    <field name="machine_serial_number" readonly="1" width="28%"/>
+                    <field name="sale_order_id" readonly="1" optional="hide"/>
+                    <field name="service_contract_id" readonly="1" optional="hide"/>
+                    <field name="service_counter" width="18%"/>
+                    <field name="total_counter" width="18%"/>
+                    <field name="color_counter" width="18%"/>
+                    <field name="black_counter" width="18%"/>
+                </list>
+            </field>
+        </record>
+
+        <record id="infinity_machine_data_view_form" model="ir.ui.view">
+            <field name="name">infinity.machine.data.form</field>
+            <field name="model">infinity.machine.data</field>
+            <field name="arch" type="xml">
+                <form>
+                    <sheet>
+                        <group>
+                            <!-- which machine -->
+                            <group string="Machine">
+                                <field name="machine_serial_number" readonly="1"/>
+                                <field name="sale_order_id" readonly="1"/>
+                                <field name="service_contract_id" readonly="1"/>
+                            </group>
+                            <!-- and what it read -->
+                            <group string="Counters">
+                                <field name="service_counter"/>
+                                <field name="total_counter"/>
+                                <field name="color_counter"/>
+                                <field name="black_counter"/>
+                            </group>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+    </data>
+</odoo>
