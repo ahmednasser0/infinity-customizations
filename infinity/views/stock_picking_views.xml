@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <!-- The serial is filled in from the order, so it is worth seeing
+             without being asked for: the column ships hidden behind the
+             optional-columns menu, and this brings it out. It is closed
+             once the machine has gone out on any of the order's transfers. -->
+        <record id="view_picking_form_inherit_infinity" model="ir.ui.view">
+            <field name="name">stock.picking.form.inherit.infinity</field>
+            <field name="model">stock.picking</field>
+            <field name="inherit_id" ref="stock.view_picking_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='move_ids']/list/field[@name='lot_ids']"
+                       position="before">
+                    <field name="infinity_serial_locked" column_invisible="1"/>
+                </xpath>
+                <xpath expr="//field[@name='move_ids']/list/field[@name='lot_ids']"
+                       position="attributes">
+                    <attribute name="optional">show</attribute>
+                    <attribute name="readonly">infinity_serial_locked</attribute>
+                </xpath>
+            </field>
+        </record>
+
+        <!-- And the same inside Detailed Operations. Its lines are a view of
+             their own rather than a list nested in the move's form, so the
+             answer is read off the line itself, not off a parent. -->
+        <record id="view_stock_move_line_operation_tree_inherit_infinity" model="ir.ui.view">
+            <field name="name">stock.move.line.operations.list.inherit.infinity</field>
+            <field name="model">stock.move.line</field>
+            <field name="inherit_id" ref="stock.view_stock_move_line_operation_tree"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='lot_id']" position="before">
+                    <field name="infinity_serial_locked" column_invisible="1"/>
+                </xpath>
+                <xpath expr="//field[@name='lot_id']" position="attributes">
+                    <attribute name="readonly">infinity_serial_locked</attribute>
+                </xpath>
+                <xpath expr="//field[@name='lot_name']" position="attributes">
+                    <attribute name="readonly">infinity_serial_locked</attribute>
+                </xpath>
+            </field>
+        </record>
+
+    </data>
+</odoo>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <!-- The column goes on the end of the list rather than beside a
+             named field: this view is itself an inherited one, and the
+             shape of what it inherits is not ours to depend on. -->
+        <record id="timesheet_view_tree_user_inherit_infinity" model="ir.ui.view">
+            <field name="name">account.analytic.line.list.inherit.infinity</field>
+            <field name="model">account.analytic.line</field>
+            <field name="inherit_id" ref="timesheet_grid.timesheet_view_tree_user_inherited"/>
+            <field name="arch" type="xml">
+                <xpath expr="//list" position="inside">
+                    <field name="infinity_sla_sub_type" optional="show"/>
+                </xpath>
+            </field>
+        </record>
+
+        <!-- To Validate opens with two filters already applied. Both are
+             taken off, so the screen opens on everything and whoever is
+             looking picks the filters they want.
+
+             group_expand and is_timesheet stay: they are not filters - they
+             tell the screen how to group, and that it is a timesheet screen
+             at all. -->
+        <record id="timesheet_grid.timesheet_grid_to_validate_all_timesheets_action"
+                model="ir.actions.act_window">
+            <field name="context">{'group_expand': True, 'is_timesheet': 1}</field>
+        </record>
+
+    </data>
+</odoo>

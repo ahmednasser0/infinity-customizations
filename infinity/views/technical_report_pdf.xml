@@ -1,0 +1,351 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <!-- The page the form is printed on: the same margins the paper form
+             uses, measured off it - 9mm at the left, 8mm at the right, and
+             little top and bottom. That makes the printable width 193mm, the
+             width every column percentage below is a share of. -->
+        <record id="paperformat_technical_report" model="report.paperformat">
+            <field name="name">Infinity Technical Report</field>
+            <field name="format">A4</field>
+            <field name="orientation">Portrait</field>
+            <field name="margin_top">3</field>
+            <field name="margin_bottom">3</field>
+            <field name="margin_left">9</field>
+            <field name="margin_right">8</field>
+            <field name="header_line" eval="False"/>
+            <field name="header_spacing">0</field>
+            <field name="dpi">96</field>
+        </record>
+
+        <!-- Every height and width here was measured off the company's own
+             form, so the printed page lands on the same grid:
+               row heights in points, straight from the scan
+               column widths as a share of the 193mm printable width
+               #C00000 red, #F2F2F2 grey, #1F3864 tick boxes, black rules
+               0.5pt for the grid inside a block, 1pt around the block
+        -->
+        <template id="report_technical_report_document">
+            <t t-set="company" t-value="res_company"/>
+            <div class="page">
+                <style>
+                    .inf-table {
+                        width:100%; border-collapse:collapse; margin:0;
+                        border:1.5pt solid #000; table-layout:fixed;
+                    }
+                    .inf-table td {
+                        border:1pt solid #000; padding:3pt 4pt;
+                        font-size:13pt; vertical-align:middle;
+                        word-wrap:break-word;
+                    }
+                    /* .inf-table td is the more specific selector, so the
+                       alignment classes have to name it too or they lose */
+                    .inf-table td.inf-top { vertical-align:top; }
+                    .inf-table td.inf-plain { border:none; }
+                    .inf-table img { max-width:100%; }
+                    .inf-head {
+                        background-color:#C00000; color:#FFFFFF;
+                        font-weight:bold; text-align:center;
+                    }
+                    .inf-grey { background-color:#F2F2F2; font-weight:bold; }
+                    .inf-band {
+                        background-color:#F2F2F2; font-weight:bold;
+                        text-align:center; font-size:14.5pt;
+                    }
+                    .inf-box {
+                        position:relative;
+                        display:inline-block; width:19pt; height:19pt;
+                        border:1.5pt solid #1F3864; margin:0 5pt;
+                    }
+                    /* the tick is drawn with two borders on a rotated block,
+                       not with a glyph: wkhtmltopdf has no font that carries
+                       U+2714 and prints a placeholder instead */
+                    .inf-tick {
+                        position:absolute; left:4.35pt; top:1.85pt;
+                        width:5pt; height:10pt;
+                        border-right:2.3pt solid #1F3864;
+                        border-bottom:2.3pt solid #1F3864;
+                        -webkit-transform:rotate(40deg);
+                        transform:rotate(40deg);
+                    }
+                    /* the two narrow spare-parts columns: their values
+                       need the room the side padding would take */
+                    .inf-table td.inf-tight { padding:3pt 1pt; white-space:nowrap; }
+                    .inf-c { text-align:center; }
+                    .inf-top { vertical-align:top; }
+                    .inf-plain { border:none; }
+                </style>
+
+                <!-- the head of the page: mark, title, and where to find us -->
+                <table style="width:100%; border:none; border-collapse:collapse;">
+                    <tr>
+                        <td class="inf-plain" style="width:30%; vertical-align:top;">
+                            <img t-if="company.logo"
+                                 t-att-src="image_data_uri(company.logo)"
+                                 style="max-height:68pt;" alt="Logo"/>
+                        </td>
+                        <td class="inf-plain" style="text-align:center; vertical-align:middle;">
+                            <div style="font-size:19pt; font-weight:bold;">Technical Report</div>
+                            <div style="font-size:14pt; font-weight:bold; color:#C00000;">
+                                S.N: <span t-field="doc.serial_number"></span>
+                            </div>
+                        </td>
+                        <td class="inf-plain" style="width:33%; text-align:right; font-size:9pt; font-weight:bold; line-height:1.2;">
+                            <div t-if="company.street"><span t-esc="company.street"></span></div>
+                            <div t-if="company.street2"><span t-esc="company.street2"></span></div>
+                            <div><span t-esc="company.city"></span> <span t-esc="company.country_id.name"></span></div>
+                            <div t-if="company.phone">Tel: <span t-esc="company.phone"></span></div>
+                            <div t-if="company.fax">Fax: <span t-esc="company.fax"></span></div>
+                            <div t-if="company.email">Email: <span t-esc="company.email"></span></div>
+                            <div t-if="company.website">Website: <span t-esc="company.website"></span></div>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- what kind of visit this was, and how many of that kind
+                     the contract has seen - the count sits beside the box it
+                     belongs to rather than on a line of its own. The table
+                     runs the full width: the count needs the room. -->
+                <table class="inf-table" style="width:100%; margin:4pt 0 0 0;">
+                    <tr style="height:24pt;">
+                        <td t-foreach="visit_types" t-as="visit" class="inf-head"
+                            t-att-style="'font-size:9.5pt;padding:2pt 2pt;line-height:1.15;white-space:nowrap;width:' + visit['w']"><span t-esc="visit['label']"></span><t t-if="doc.task_visit_type == visit['code']"><br/><span t-field="doc.visit_count"></span></t></td>
+                    </tr>
+                    <tr style="height:18.7pt;">
+                        <td t-foreach="visit_types" t-as="visit" class="inf-c">
+                            <span class="inf-box"><t t-if="doc.task_visit_type == visit['code']"><span class="inf-tick"></span></t></span>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- who went, and against what -->
+                <table class="inf-table" style="margin-top:4pt;">
+                    <tr style="height:15.8pt;">
+                        <td class="inf-head" style="width:20%; white-space:nowrap;">Work Order No.</td>
+                        <td class="inf-head" style="width:12%; white-space:nowrap;">Task No.</td>
+                        <td class="inf-head" style="width:15%;">Date</td>
+                        <td class="inf-head" style="width:22%;">SE Name</td>
+                        <td class="inf-head" style="width:12%;">SE ID</td>
+                        <td class="inf-head" style="width:19%; white-space:nowrap;">Task Status</td>
+                    </tr>
+                    <tr style="height:17.9pt;">
+                        <td class="inf-c"><span t-field="doc.work_order_no"></span></td>
+                        <td class="inf-c"><span t-field="doc.task_no"></span></td>
+                        <td class="inf-c"><span t-field="doc.report_date"></span></td>
+                        <td class="inf-c"><span t-esc="doc.task_hard_dispatch_id.name"></span></td>
+                        <td class="inf-c"><span t-esc="doc.task_actual_engineer_id_code.actual_engineer_ids"></span></td>
+                        <td class="inf-c" style="white-space:nowrap;"><span t-field="doc.task_status"></span></td>
+                    </tr>
+                </table>
+
+                <table class="inf-table">
+                    <tr style="height:18pt;"><td class="inf-band">Customer Information</td></tr>
+                </table>
+                <table class="inf-table">
+                    <tr style="height:30.6pt;">
+                        <td class="inf-head" style="width:16%;">Customer Name</td>
+                        <td style="width:34%;"><span t-esc="doc.agreement_partner_id.name"></span></td>
+                        <td class="inf-head" style="width:18%;">Contact Person</td>
+                        <td style="width:32%;"><span t-esc="doc.agreement_contact_id.name"></span></td>
+                    </tr>
+                </table>
+                <table class="inf-table">
+                    <tr style="height:30.2pt;">
+                        <td class="inf-grey inf-c" rowspan="2" style="width:12%;">Address</td>
+                        <td class="inf-grey" style="width:16%; white-space:nowrap;">Governorate</td>
+                        <td style="width:17%;"><span t-esc="doc.agreement_contact_id.state_id.name"></span></td>
+                        <td class="inf-top" rowspan="2" style="width:34%;">
+                            <strong>Full Address :</strong>
+                            <span t-field="doc.agreement_address"></span>
+                        </td>
+                        <td style="font-size:10pt;"><strong>Tel : </strong><span t-field="doc.agreement_phone"></span></td>
+                    </tr>
+                    <tr style="height:30.2pt;">
+                        <td class="inf-grey">City</td>
+                        <td><span t-esc="doc.agreement_contact_id.city"></span></td>
+                        <td style="font-size:10pt;"><strong>Email : </strong><span t-field="doc.agreement_email"></span></td>
+                    </tr>
+                </table>
+
+                <table class="inf-table" style="margin-top:2pt;">
+                    <tr style="height:20pt;"><td class="inf-band">Machine Data</td></tr>
+                </table>
+                <table class="inf-table">
+                    <tr style="height:21pt;">
+                        <td class="inf-head" style="width:34%;">Serial Number</td>
+                        <td class="inf-head" style="width:33%;">Machine Model</td>
+                        <td class="inf-head">Manufacturer</td>
+                    </tr>
+                    <tr style="height:21pt;">
+                        <td class="inf-c"><span t-field="doc.machine_serial_number"></span></td>
+                        <td class="inf-c"><span t-field="doc.machine_model"></span></td>
+                        <td class="inf-c"><span t-field="doc.manufacturer"></span></td>
+                    </tr>
+                </table>
+                <table class="inf-table">
+                    <tr style="height:26.7pt;">
+                        <td class="inf-head" style="width:17%; padding:3pt 2pt; font-size:11pt; white-space:nowrap;">Service Counter</td>
+                        <td class="inf-c" style="width:13%; white-space:nowrap;"><span t-field="doc.service_counter"></span></td>
+                        <td class="inf-head" style="width:15%; padding:3pt 2pt; font-size:11pt; white-space:nowrap;">Total Counter</td>
+                        <td class="inf-c" style="width:13%; white-space:nowrap;"><span t-field="doc.total_counter"></span></td>
+                        <td class="inf-head" style="width:8%; padding:3pt 2pt; font-size:11pt;">Color</td>
+                        <td class="inf-c" style="width:13%; white-space:nowrap;"><span t-field="doc.color_counter"></span></td>
+                        <td class="inf-head" style="width:8%; padding:3pt 2pt; font-size:11pt;">Black</td>
+                        <td class="inf-c" style="width:13%; white-space:nowrap;"><span t-field="doc.black_counter"></span></td>
+                    </tr>
+                </table>
+
+                <table class="inf-table" style="margin-top:2pt;">
+                    <tr style="height:17.6pt;"><td class="inf-band">Technical Diagnosis / Repair Work Details</td></tr>
+                </table>
+                <table class="inf-table">
+                    <tr><td class="inf-top" style="height:70pt;"><div t-field="doc.technical_diagnosis"></div></td></tr>
+                </table>
+                <table class="inf-table">
+                    <tr style="height:18.4pt;">
+                        <td class="inf-grey" style="width:27.1%;">Travel Time</td>
+                        <td class="inf-c" style="width:21.9%;"><span t-field="doc.travel_time_hours"></span></td>
+                        <td class="inf-grey" style="width:30.7%;">Work time</td>
+                        <td class="inf-c"><span t-field="doc.work_time_hours"></span></td>
+                    </tr>
+                </table>
+
+                <!-- what was asked for, and what actually went in.
+                     Where a fitted part came from is a column of its own now:
+                     it is the line's own Source, not a guess made by putting
+                     its quantity under one heading or the other. -->
+                <table style="width:100%; border:none; border-collapse:collapse; margin-top:4pt;">
+                    <tr>
+                        <td class="inf-plain" style="width:49.5%; padding:0;">
+                            <table class="inf-table">
+                                <colgroup>
+                                    <col style="width:22%;"/>
+                                    <col style="width:38%;"/>
+                                    <col style="width:16%;"/>
+                                    <col style="width:24%;"/>
+                                </colgroup>
+                                <tr style="height:14.4pt;">
+                                    <td class="inf-head" colspan="4">Spare Parts Requested</td>
+                                </tr>
+                                <tr style="height:14.4pt;">
+                                    <td class="inf-head inf-tight" style="font-size:11pt;">P/N</td>
+                                    <td class="inf-head" style="font-size:11pt; white-space:nowrap;">Description</td>
+                                    <td class="inf-head inf-tight" style="font-size:11pt;">UOM</td>
+                                    <td class="inf-head" style="font-size:11pt;">Qty</td>
+                                </tr>
+                                <tr t-foreach="doc.spare_requested_ids" t-as="part" style="height:18.9pt;">
+                                    <td class="inf-tight inf-c"><span t-esc="part.product_id.default_code"></span></td>
+                                    <td><span t-field="part.description"></span></td>
+                                    <td class="inf-c inf-tight"><span t-esc="part.uom_id.name"></span></td>
+                                    <td class="inf-c" style="white-space:nowrap;"><span t-field="part.qty"></span></td>
+                                </tr>
+                                <!-- lines to write on where the report
+                                     carries none, the way the form has them -->
+                                <t t-if="not doc.spare_requested_ids">
+                                    <tr style="height:18.9pt;"><td></td><td></td><td></td><td></td></tr>
+                                    <tr style="height:18.9pt;"><td></td><td></td><td></td><td></td></tr>
+                                    <tr style="height:18.9pt;"><td></td><td></td><td></td><td></td></tr>
+                                    <tr style="height:18.9pt;"><td></td><td></td><td></td><td></td></tr>
+                                </t>
+                            </table>
+                        </td>
+                        <td class="inf-plain" style="width:1%; padding:0;"></td>
+                        <td class="inf-plain" style="width:49.5%; padding:0;">
+                            <table class="inf-table">
+                                <colgroup>
+                                    <col style="width:18%;"/>
+                                    <col style="width:28%;"/>
+                                    <col style="width:14%;"/>
+                                    <col style="width:21%;"/>
+                                    <col style="width:19%;"/>
+                                </colgroup>
+                                <tr style="height:14.4pt;">
+                                    <td class="inf-head" colspan="5">Spare Parts Installed</td>
+                                </tr>
+                                <tr style="height:14.4pt;">
+                                    <td class="inf-head inf-tight" style="font-size:11pt;">P/N</td>
+                                    <td class="inf-head" style="font-size:11pt; white-space:nowrap;">Description</td>
+                                    <td class="inf-head inf-tight" style="font-size:11pt;">UOM</td>
+                                    <td class="inf-head inf-tight" style="font-size:11pt;">Source</td>
+                                    <td class="inf-head" style="font-size:11pt;">Qty</td>
+                                </tr>
+                                <tr t-foreach="doc.spare_installed_ids" t-as="part" style="height:18.9pt;">
+                                    <td class="inf-tight inf-c"><span t-esc="part.product_id.default_code"></span></td>
+                                    <td><span t-field="part.description"></span></td>
+                                    <td class="inf-c inf-tight"><span t-esc="part.uom_id.name"></span></td>
+                                    <td class="inf-c inf-tight"><span t-field="part.part_source"></span></td>
+                                    <td class="inf-c" style="white-space:nowrap;"><span t-field="part.qty"></span></td>
+                                </tr>
+                                <t t-if="not doc.spare_installed_ids">
+                                    <tr style="height:18.9pt;"><td></td><td></td><td></td><td></td><td></td></tr>
+                                    <tr style="height:18.9pt;"><td></td><td></td><td></td><td></td><td></td></tr>
+                                    <tr style="height:18.9pt;"><td></td><td></td><td></td><td></td><td></td></tr>
+                                    <tr style="height:18.9pt;"><td></td><td></td><td></td><td></td><td></td></tr>
+                                </t>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+
+                <table class="inf-table" style="margin-top:4pt;">
+                    <tr style="height:24pt;">
+                        <td class="inf-head" style="width:23.2%;">FSE Name</td>
+                        <td class="inf-top" style="width:27.1%;"><span t-esc="doc.task_hard_dispatch_id.name"></span></td>
+                        <td class="inf-head" rowspan="2" style="width:20.6%;">Customer Comments</td>
+                        <td class="inf-top" rowspan="2"><span t-field="doc.customer_comments"></span></td>
+                    </tr>
+                    <tr style="height:24pt;">
+                        <td class="inf-head">FSE Accompany</td>
+                        <td class="inf-top" style="font-size:11pt;"><span t-esc="', '.join(doc.task_fse_accompany_ids.mapped('name'))"></span></td>
+                    </tr>
+                    <tr style="height:25.7pt;">
+                        <td class="inf-head">FSE Signature</td>
+                        <td class="inf-c">
+                            <img t-if="doc.fse_signature" t-att-src="image_data_uri(doc.fse_signature)"
+                                 style="max-height:23.8pt;" alt="FSE Signature"/>
+                        </td>
+                        <td class="inf-head">Customer Signature</td>
+                        <td class="inf-c">
+                            <img t-if="doc.customer_signature" t-att-src="image_data_uri(doc.customer_signature)"
+                                 style="max-height:23.8pt;" alt="Customer Signature"/>
+                        </td>
+                    </tr>
+                </table>
+
+            </div>
+        </template>
+
+        <template id="report_technical_report">
+            <t t-call="web.html_container">
+                <t t-set="visit_types" t-value="[
+                    {'code': 'installation', 'label': 'Installation', 'w': '14%'},
+                    {'code': 'emergency', 'label': 'EM', 'w': '9%'},
+                    {'code': 'pm', 'label': 'PM', 'w': '9%'},
+                    {'code': 'rv', 'label': 'RV', 'w': '9%'},
+                    {'code': 'labor', 'label': 'Labor', 'w': '10%'},
+                    {'code': 'inspection', 'label': 'Inspection', 'w': '12%'},
+                    {'code': 'work_shop', 'label': 'Internally', 'w': '12%'},
+                    {'code': 'site_survey', 'label': 'Site Survey', 'w': '13%'},
+                    {'code': 'premis', 'label': 'Premis', 'w': '12%'},
+                ]"/>
+                <t t-foreach="docs" t-as="doc">
+                    <t t-call="infinity.report_technical_report_document"/>
+                </t>
+            </t>
+        </template>
+
+        <record id="action_report_technical_report" model="ir.actions.report">
+            <field name="name">Technical Report</field>
+            <field name="model">infinity.technical.report</field>
+            <field name="report_type">qweb-pdf</field>
+            <field name="report_name">infinity.report_technical_report</field>
+            <field name="report_file">infinity.report_technical_report</field>
+            <field name="paperformat_id" ref="paperformat_technical_report"/>
+            <field name="binding_model_id" ref="model_infinity_technical_report"/>
+            <field name="binding_type">report</field>
+            <field name="print_report_name">'Technical Report - %s' % (object.serial_number or object.task_name or object.id)</field>
+        </record>
+
+    </data>
+</odoo>

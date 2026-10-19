@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <!-- Engine sits on the component line itself, beside the product it
+             is about. optional="show" keeps the column in the table by
+             default while still letting it be hidden from the column
+             picker. -->
+        <record id="mrp_bom_form_view_inherit_infinity" model="ir.ui.view">
+            <field name="name">mrp.bom.form.inherit.infinity</field>
+            <field name="model">mrp.bom</field>
+            <field name="inherit_id" ref="mrp.mrp_bom_form_view"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='bom_line_ids']/list/field[@name='product_id']"
+                       position="after">
+                    <field name="engine" string="Engine" optional="show"/>
+                </xpath>
+                <!-- Carried on the form so it survives the trip to the
+                     browser and back: it is how the next tick knows which
+                     component was ticked last. -->
+                <xpath expr="//field[@name='bom_line_ids']" position="before">
+                    <field name="engine_memo" invisible="1"/>
+                </xpath>
+            </field>
+        </record>
+
+    </data>
+</odoo>
