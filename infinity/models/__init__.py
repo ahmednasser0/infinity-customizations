@@ -1,6 +1,7 @@
 from . import technical_report
 from . import project_task
 from . import project_task_type
+from . import project_project
 from . import contract_type
 from . import service_contract
 from . import sale_order
