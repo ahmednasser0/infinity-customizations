@@ -307,6 +307,56 @@
             <field name="act_window_id" ref="infinity_action_technical_report"/>
         </record>
 
+        <!-- Agreements, for the screens that list them rather than reach one
+             through its task. Columns that say which agreement this is and
+             what it covers - the terms themselves are on the form. -->
+        <record id="infinity_technical_report_view_list_agreement" model="ir.ui.view">
+            <field name="name">infinity.technical.report.list.agreement</field>
+            <field name="model">infinity.technical.report</field>
+            <field name="arch" type="xml">
+                <list string="Agreements" create="false" delete="false">
+                    <field name="task_project_id"/>
+                    <field name="task_name"/>
+                    <field name="agreement_partner_id" string="Customer Name"/>
+                    <field name="agreement_contact_id" optional="show"/>
+                    <field name="agreement_service_contract_id" string="SLA Sub Type"/>
+                    <field name="agreement_machine_serial_number" optional="show"/>
+                    <field name="agreement_from_date" optional="show"/>
+                    <field name="agreement_to_date" optional="show"/>
+                    <field name="task_stage_id" optional="hide"/>
+                </list>
+            </field>
+        </record>
+
+        <record id="infinity_action_agreement" model="ir.actions.act_window">
+            <field name="name">Agreements</field>
+            <field name="res_model">infinity.technical.report</field>
+            <field name="view_mode">list,form</field>
+            <field name="domain">[('report_type', '=', 'agreement')]</field>
+            <field name="context">{'create': False, 'delete': False}</field>
+            <field name="search_view_id" ref="infinity_technical_report_view_search_all"/>
+        </record>
+
+        <record id="infinity_action_agreement_list" model="ir.actions.act_window.view">
+            <field name="sequence">10</field>
+            <field name="view_mode">list</field>
+            <field name="view_id" ref="infinity_technical_report_view_list_agreement"/>
+            <field name="act_window_id" ref="infinity_action_agreement"/>
+        </record>
+
+        <record id="infinity_action_agreement_form" model="ir.actions.act_window.view">
+            <field name="sequence">20</field>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="infinity_technical_report_view_form_agreement"/>
+            <field name="act_window_id" ref="infinity_action_agreement"/>
+        </record>
+
+        <menuitem id="menu_infinity_agreement"
+                  name="Agreements"
+                  parent="project.menu_project_management"
+                  action="infinity_action_agreement"
+                  sequence="45"/>
+
         <menuitem id="menu_infinity_technical_report"
                   name="Visits History"
                   parent="project.menu_project_management"
