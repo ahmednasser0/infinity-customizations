@@ -14,6 +14,35 @@ class AccountAnalyticLine(models.Model):
     infinity_sla_sub_type = fields.Char(
         string='SLA Sub Type', compute='_compute_infinity_sla_sub_type')
 
+    # --- TS-LABOR ---------------------------------------------------------
+    # Written by the TS-LABOR automation rules, which live in the database.
+    # The x_ prefix is kept on purpose: the rules address these fields by
+    # name, and renaming them would stop every one of them working.
+    x_ts_audit_log = fields.Text(
+        string='Audit Log',
+        readonly=True,
+        copy=False,
+        help='Who edited / validated this timesheet line and when (written by '
+             'TS-LABOR rules).',
+    )
+    x_ts_snapshot = fields.Text(
+        string='TS Snapshot',
+        readonly=True,
+        copy=False,
+        help='Technical: last known values '
+             '(date|employee|project|task|hours|description) used by the audit '
+             'rule to log old -> new changes.',
+    )
+    x_ts_move_id = fields.Many2one(
+        comodel_name='account.move',
+        string='Labor Cost Entry',
+        readonly=True,
+        copy=False,
+        index=True,
+        ondelete='set null',
+        help='Journal entry created when this timesheet line was validated.',
+    )
+
     @api.depends('task_id', 'project_id')
     def _compute_infinity_sla_sub_type(self):
         for line in self:

@@ -12,7 +12,7 @@
     'application': True,
 
     'category': 'Uncategorized',
-    'version': '0.49',
+    'version': '0.50',
 
     # Stated rather than left to the default: a manifest odoo.sh cannot read
     # is reported as 'not installable', and these two make that reading
