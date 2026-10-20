@@ -314,6 +314,9 @@ class TechnicalReport(models.Model):
                 (engineer.name or '').strip(), year, counter)
 
     # --- Visits -----------------------------------------------------------
+    visit_over_display = fields.Char(
+        related='task_id.visit_over_display',
+        string='Visits Over the Allowance', readonly=True)
     visit_count = fields.Char(
         string='Visit Count', compute='_compute_visit_count',
         help='Visits of this task\'s type already spent, out of what the '

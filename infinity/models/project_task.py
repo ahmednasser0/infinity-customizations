@@ -97,6 +97,13 @@ class ProjectTask(models.Model):
         string='Visits Used', compute='_compute_visit_count')
     visit_count_label = fields.Char(
         string='Visits Label', compute='_compute_visit_count')
+    # How many of them the contract never allowed for, shown beside the
+    # count rather than folded into it: '12 / 12' and '+3' say different
+    # things, and the second is the one somebody has to answer for.
+    visit_over_count = fields.Integer(
+        string='Visits Over', compute='_compute_visit_count')
+    visit_over_display = fields.Char(
+        string='Visits Over the Allowance', compute='_compute_visit_count')
 
     def _visit_allowance(self):
         """How many visits of this task's type the contract allows, as
@@ -128,6 +135,9 @@ class ProjectTask(models.Model):
             used = len(task._visit_siblings())
             task.visit_count = used
             task.visit_over_allowance = bool(allowed) and used > allowed
+            over = used - allowed if task.visit_over_allowance else 0
+            task.visit_over_count = over
+            task.visit_over_display = '+%s' % over if over else False
 
             if not counted:
                 task.visit_count_display = str(used)

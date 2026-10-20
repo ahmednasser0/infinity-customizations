@@ -31,7 +31,14 @@
                             class="oe_stat_button" icon="fa-map-marker"
                             invisible="visit_type not in ('pm', 'emergency', 'rv')">
                         <div class="o_stat_info">
-                            <field name="visit_count_display" class="o_stat_value"/>
+                            <!-- the two numbers on one line, the second of
+                                 them red: what the contract allowed, and
+                                 what went past it -->
+                            <div class="d-flex align-items-baseline gap-1">
+                                <field name="visit_count_display" class="o_stat_value"/>
+                                <field name="visit_over_display" class="o_stat_value text-danger"
+                                       invisible="not visit_over_allowance"/>
+                            </div>
                             <field name="visit_count_label" class="o_stat_text"/>
                         </div>
                     </button>

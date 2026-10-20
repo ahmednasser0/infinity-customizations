@@ -110,7 +110,7 @@
                 <table class="inf-table" style="width:100%; margin:4pt 0 0 0;">
                     <tr style="height:24pt;">
                         <td t-foreach="visit_types" t-as="visit" class="inf-head"
-                            t-att-style="'font-size:9.5pt;padding:2pt 2pt;line-height:1.15;white-space:nowrap;width:' + visit['w']"><span t-esc="visit['label']"></span><t t-if="doc.task_visit_type == visit['code']"><br/><span t-field="doc.visit_count"></span></t></td>
+                            t-att-style="'font-size:9.5pt;padding:2pt 2pt;line-height:1.15;white-space:nowrap;width:' + visit['w']"><span t-esc="visit['label']"></span><t t-if="doc.task_visit_type == visit['code']"><br/><span t-field="doc.visit_count"></span><t t-if="doc.visit_over_display"><span style="color:#C00000;">&#160;<t t-esc="doc.visit_over_display"/></span></t></t></td>
                     </tr>
                     <tr style="height:18.7pt;">
                         <td t-foreach="visit_types" t-as="visit" class="inf-c">
