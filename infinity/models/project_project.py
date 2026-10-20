@@ -1,16 +1,17 @@
 from odoo import api, models
 
-# Ticked on every new project. All four are Boolean, so there is no such
-# thing as leaving one unanswered - the question is only which answer a
+# Ticked on every new project. Every one of them is Boolean, so there is no
+# such thing as leaving one unanswered - the question is only which answer a
 # project starts with, and here it is yes. Anybody can untick one afterwards.
 #
 # Not every one of them is always there: allow_billable comes with
-# sale_project and allow_material with Field Service, so each is only set
-# where the model actually carries it.
+# sale_project, and is_fsm and allow_material with Field Service, so each is
+# only set where the model actually carries it.
 _ALLOW_ON_NEW_PROJECTS = (
     'allow_recurring_tasks',
     'allow_milestones',
     'allow_billable',
+    'is_fsm',
     'allow_material',
 )
 
