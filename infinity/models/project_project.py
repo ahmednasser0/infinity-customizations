@@ -1,8 +1,11 @@
-from odoo import api, models
+from odoo import _, api, models
+from odoo.exceptions import UserError
 
-# Ticked on every new project. Every one of them is Boolean, so there is no
-# such thing as leaving one unanswered - the question is only which answer a
-# project starts with, and here it is yes. Anybody can untick one afterwards.
+# On for every project, and not to be turned off. Every one of them is
+# Boolean, so 'required' cannot mean what it means on a text box - an empty
+# tick is a real answer, and no constraint is broken by it. What it means
+# here is that yes is the only answer: they start ticked and unticking one
+# is refused.
 #
 # Not every one of them is always there: allow_billable comes with
 # sale_project, and is_fsm and allow_material with Field Service, so each is
@@ -21,10 +24,10 @@ class ProjectProject(models.Model):
 
     @api.model
     def default_get(self, fields_list):
-        """Show the four allowances already ticked on a new project's form.
+        """Show the allowances already ticked on a new project's form.
 
         create() alone would tick them on save, which is too late to be read
-        as a default: the form opens with four empty boxes and they fill
+        as a default: the form opens with empty boxes and they fill
         themselves in once the project is gone. Answering here puts the ticks
         on the screen, where somebody can see them and take one off.
 
@@ -40,18 +43,39 @@ class ProjectProject(models.Model):
             values[name] = True
         return values
 
+    def write(self, vals):
+        """Refuse to turn any of them off.
+
+        A check by @api.constrains cannot be used: it names its fields at
+        load time, and is_fsm and allow_material are not there at all unless
+        Field Service is installed - naming a field that does not exist stops
+        the module loading. Asked here instead, of whatever is actually being
+        written.
+        """
+        off = [
+            name for name in _ALLOW_ON_NEW_PROJECTS
+            if name in self._fields and name in vals and not vals[name]
+        ]
+        if off:
+            labels = ', '.join(self._fields[name].string for name in off)
+            raise UserError(_(
+                'These cannot be turned off on a project: %(fields)s.',
+                fields=labels))
+        return super().write(vals)
+
     @api.model_create_multi
     def create(self, vals_list):
-        """Start a project with the four allowances on, and with every stage.
+        """Start a project with the allowances on, and with every stage.
 
-        What came in is left as it was found: a value given explicitly - by
-        hand, by an import, by a project template - is the answer somebody
-        meant, and is not overwritten with yes.
+        Set rather than defaulted: these are not to be off, so a no arriving
+        from an import or a project template is corrected rather than kept.
+        A project that reaches the database with one of them off would be a
+        project nobody could later fix without tripping the check below.
         """
         vals_list = [dict(vals) for vals in vals_list]
         for vals in vals_list:
             for name in _ALLOW_ON_NEW_PROJECTS:
-                if name in self._fields and name not in vals:
+                if name in self._fields:
                     vals[name] = True
 
         projects = super().create(vals_list)
