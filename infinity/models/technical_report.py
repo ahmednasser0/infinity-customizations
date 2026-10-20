@@ -402,10 +402,14 @@ class TechnicalReport(models.Model):
         One Sales Order carries one contract and one machine, so the machine
         under a task is the machine on the order behind it - the order the
         Agreement is built from where there is one, otherwise the first of
-        the orders this report is allowed to read. The contract is asked
-        before the order's own copy of the number: the copy is taken once,
-        when the contract is picked, so an order whose contract was picked
-        before the serial was typed kept the blank it was given.
+        the orders this report is allowed to read.
+
+        The order's own number is asked before the contract's. It is the
+        order that says which machine this customer was actually sent: it
+        is filled in from the serial chosen on the line and corrected again
+        when the goods go out. The contract's number is typed by hand, and
+        where the two disagree it is the one that has gone stale - so it
+        only stands in when the order has nothing to say.
         """
         self.ensure_one()
         orders = (
@@ -418,8 +422,8 @@ class TechnicalReport(models.Model):
         )
         for order in orders:
             serial = (
-                order.service_contract_id.machine_serial_number
-                or order.service_contract_machine_serial_number
+                order.service_contract_machine_serial_number
+                or order.service_contract_id.machine_serial_number
                 or ''
             ).strip()
             if serial:

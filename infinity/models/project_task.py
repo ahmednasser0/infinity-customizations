@@ -270,12 +270,14 @@ class ProjectTask(models.Model):
         if serials:
             return serials
 
-        # a task whose readings have not been drawn up yet - ask the contract
+        # a task whose readings have not been drawn up yet - ask the order,
+        # and only then the contract behind it. Same order of asking as the
+        # report's own, so the two cannot name different machines.
         order = self._infinity_sale_order()
         if not order:
             return set()
-        serial = (order.service_contract_id.machine_serial_number
-                  or order.service_contract_machine_serial_number or '').strip()
+        serial = (order.service_contract_machine_serial_number
+                  or order.service_contract_id.machine_serial_number or '').strip()
         return {serial} if serial else set()
 
     def _past_visits(self):

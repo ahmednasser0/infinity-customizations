@@ -324,7 +324,7 @@
                     <field name="agreement_partner_id" string="Customer Name"/>
                     <field name="agreement_contact_id" optional="show"/>
                     <field name="agreement_service_contract_id" string="SLA Sub Type"/>
-                    <field name="agreement_machine_serial_number" optional="show"/>
+                    <field name="machine_serial_number" optional="show"/>
                     <field name="agreement_from_date" optional="show"/>
                     <field name="agreement_to_date" optional="show"/>
                     <field name="task_stage_id" optional="hide"/>
