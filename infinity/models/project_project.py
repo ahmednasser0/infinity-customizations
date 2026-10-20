@@ -18,6 +18,27 @@ _ALLOW_ON_NEW_PROJECTS = (
 class ProjectProject(models.Model):
     _inherit = 'project.project'
 
+    @api.model
+    def default_get(self, fields_list):
+        """Show the four allowances already ticked on a new project's form.
+
+        create() alone would tick them on save, which is too late to be read
+        as a default: the form opens with four empty boxes and they fill
+        themselves in once the project is gone. Answering here puts the ticks
+        on the screen, where somebody can see them and take one off.
+
+        A default handed in deliberately - default_allow_billable in the
+        context, say, from a button or a link - is left alone.
+        """
+        values = super().default_get(fields_list)
+        for name in _ALLOW_ON_NEW_PROJECTS:
+            if name not in self._fields or name not in fields_list:
+                continue
+            if 'default_%s' % name in self.env.context:
+                continue
+            values[name] = True
+        return values
+
     @api.model_create_multi
     def create(self, vals_list):
         """Start a project with the four allowances on, and with every stage.
