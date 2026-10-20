@@ -271,10 +271,14 @@
             <field name="model">infinity.technical.report</field>
             <field name="arch" type="xml">
                 <search string="Technical Reports">
+                    <!-- First, so that typing a number and pressing enter
+                         searches the machine: the order of these is the order
+                         of the dropdown, and the first one is what a bare
+                         search goes to. -->
+                    <field name="machine_serial_number"/>
                     <field name="task_name"/>
                     <field name="task_project_id"/>
                     <field name="task_partner_id"/>
-                    <field name="machine_serial_number"/>
                     <filter name="groupby_project" string="Project" context="{'group_by': 'task_project_id'}"/>
                     <filter name="groupby_customer" string="Customer" context="{'group_by': 'task_partner_id'}"/>
                     <filter name="groupby_stage" string="Stage" context="{'group_by': 'task_stage_id'}"/>
