@@ -18,7 +18,7 @@
                     <field name="fse_accompany_ids" widget="many2many_tags"/>
                 </xpath>
                 <xpath expr="//field[@name='project_id']" position="after">
-                    <field name="visit_type"/>
+                    <field name="visit_type" required="1"/>
                     <field name="work_order_no"/>
                 </xpath>
 

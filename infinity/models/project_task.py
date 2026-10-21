@@ -67,7 +67,16 @@ class ProjectTask(models.Model):
         ('work_shop', 'Work Shop'),
         ('site_survey', 'Site Survey'),
         ('premis', 'Premis'),
-    ], string='Visit Type', required=True)
+    ], string='Visit Type')
+    # Not required here, on purpose. project.task is a table this module
+    # arrived late to: every task made before the field existed has no visit
+    # type, and there is no value among the nine that honestly describes a
+    # task that was never a visit. A required field cannot have its NOT NULL
+    # constraint added while those rows are there, so every upgrade logged
+    # 'column visit_type ... contains null values' as an ERROR and left the
+    # constraint off anyway. The form asks for it instead - see
+    # views/project_task_views.xml - which is where the answer was ever
+    # actually being demanded.
 
     # --- Visit count ------------------------------------------------------
     # PM, EM and RV are the visits a contract is measured in, so those are
