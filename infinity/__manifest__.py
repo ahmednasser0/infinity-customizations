@@ -12,7 +12,7 @@
     'application': True,
 
     'category': 'Uncategorized',
-    'version': '0.60',
+    'version': '0.61',
 
     # Stated rather than left to the default: a manifest odoo.sh cannot read
     # is reported as 'not installable', and these two make that reading
@@ -34,6 +34,7 @@
     # always loaded
     'data': [
         'security/ir.model.access.csv',
+        'data/ir_sequence.xml',
         'views/project_task_views.xml',
         'views/contract_type_views.xml',
         'views/technical_report.xml',

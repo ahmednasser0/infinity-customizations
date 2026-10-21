@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- The running number the TS-LABOR automation rules draw from.
+
+         The rules themselves live in the database (Settings > Technical >
+         Automation Rules) and ask for a number by code, next_by_code
+         ('ts.labor.ref'), so the code below is the part that matters and is
+         not to be renamed. Rule 2 puts the number it gets on the labor cost
+         journal entry it posts when a timesheet is validated.
+
+         noupdate: an upgrade must never put the counter back to 1. Once this
+         record exists Odoo leaves its values alone, so the number it has
+         reached is the number it keeps. -->
+    <data noupdate="1">
+        <record id="seq_ts_labor_ref" model="ir.sequence">
+            <field name="name">TS-LABOR Reference</field>
+            <field name="code">ts.labor.ref</field>
+            <!-- no_gap: slower than standard, and the point of it - a cost
+                 entry reference with a hole in it is a question somebody in
+                 Accounting has to answer. -->
+            <field name="implementation">no_gap</field>
+            <field name="prefix">TS-LABOR-</field>
+            <field name="padding">4</field>
+            <field name="number_increment">1</field>
+            <field name="number_next">1</field>
+            <!-- Left to no company on purpose: the rules run for whoever
+                 validated the timesheet, and one series across the business
+                 is what Accounting asked for. -->
+            <field name="company_id" eval="False"/>
+        </record>
+    </data>
+</odoo>
