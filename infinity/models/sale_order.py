@@ -95,8 +95,12 @@ class SaleOrder(models.Model):
         string='SLA Sub Type Value', readonly=True)
 
     # --- This order's own copy of the contract terms (editable) ---
+    # Named apart from machine_lot_id, which is the serial the lines
+    # actually chose and the one this order goes out under. Both sat on the
+    # same form page under the same words, and since 0.59 they are not even
+    # equals any more - the line's choice is what the report believes.
     service_contract_machine_serial_number = fields.Char(
-        string='Machine Serial Number',
+        string='Contract Machine Serial Number',
         compute='_compute_from_service_contract', store=True, readonly=False)
     service_contract_from_date = fields.Date(
         string='From Date',

@@ -23,8 +23,14 @@ class TechnicalReport(models.Model):
     # changes when Odoo decides to recompute it, which is how the Agreement
     # ended up holding a customer that had since been changed elsewhere -
     # and how a single empty recompute could leave the field blank for good.
+    # 'Customer Name' rather than 'Customer': task_partner_id is the
+    # Customer, and two fields of one model sharing a label is what Odoo
+    # warns about - a search list offered 'Customer' twice with no way to
+    # tell them apart. The search view already called this one Customer
+    # Name, and so does the printed report, so the name it answers to is now
+    # the name it was already going by.
     agreement_partner_id = fields.Many2one(
-        'res.partner', string='Customer',
+        'res.partner', string='Customer Name',
         compute='_compute_agreement_partner')
 
     def _agreement_source_partner(self):
@@ -630,8 +636,14 @@ class TechnicalReport(models.Model):
     ], string='SLA Unit', compute='_compute_agreement', readonly=True)
     agreement_hours = fields.Float(
         string='Hours', compute='_compute_agreement', readonly=True)
+    # The contract's own copy, which since 0.59 is no longer the one that
+    # decides: machine_serial_number asks the order first. Named apart from
+    # it so a search list does not offer 'Machine Serial Number' twice; the
+    # Agreement form still shows it under the short name, where it is the
+    # only serial on screen.
     agreement_machine_serial_number = fields.Char(
-        string='Machine Serial Number', compute='_compute_agreement', readonly=True)
+        string='Contract Machine Serial Number',
+        compute='_compute_agreement', readonly=True)
     agreement_min_number_of_copies = fields.Integer(
         string='Min Number of Copies', compute='_compute_agreement', readonly=True)
     agreement_max_number_of_copies = fields.Integer(

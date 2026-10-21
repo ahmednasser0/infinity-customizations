@@ -22,22 +22,22 @@
                         <group>
                             <field name="abbreviation"/>
                             <field name="name"/>
-                            <field name="warranty_sub_type"
+                            <field name="warranty_sub_type" string="SLA Sub Type"
                                    invisible="abbreviation != 'warranty'"
                                    required="abbreviation == 'warranty'"/>
-                            <field name="labor_sub_type"
+                            <field name="labor_sub_type" string="SLA Sub Type"
                                    invisible="abbreviation != 'labor_annual_contract'"
                                    required="abbreviation == 'labor_annual_contract'"/>
-                            <field name="service_maintenance_sub_type"
+                            <field name="service_maintenance_sub_type" string="SLA Sub Type"
                                    invisible="abbreviation != 'service_maintenance_annual_contract'"
                                    required="abbreviation == 'service_maintenance_annual_contract'"/>
-                            <field name="fsma_sub_type"
+                            <field name="fsma_sub_type" string="SLA Sub Type"
                                    invisible="abbreviation != 'full_service_maintenance_annual_contract'"
                                    required="abbreviation == 'full_service_maintenance_annual_contract'"/>
-                            <field name="cost_per_click_sub_type"
+                            <field name="cost_per_click_sub_type" string="SLA Sub Type"
                                    invisible="abbreviation != 'cost_per_click'"
                                    required="abbreviation == 'cost_per_click'"/>
-                            <field name="time_material_sub_type"
+                            <field name="time_material_sub_type" string="SLA Sub Type"
                                    invisible="abbreviation != 'time_material'"
                                    required="abbreviation == 'time_material'"/>
                         </group>

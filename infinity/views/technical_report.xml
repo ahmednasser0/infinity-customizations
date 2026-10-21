@@ -42,7 +42,7 @@
                                 <field name="agreement_service_contract_id"/>
                                 <field name="agreement_full_name"/>
                                 <field name="agreement_abbreviation"/>
-                                <field name="agreement_machine_serial_number"/>
+                                <field name="agreement_machine_serial_number" string="Machine Serial Number"/>
                             </group>
                             <!-- and on what terms -->
                             <group>
@@ -321,7 +321,7 @@
                 <list string="Agreements" create="false" delete="false">
                     <field name="task_project_id"/>
                     <field name="task_name"/>
-                    <field name="agreement_partner_id" string="Customer Name"/>
+                    <field name="agreement_partner_id"/>
                     <field name="agreement_contact_id" optional="show"/>
                     <field name="agreement_service_contract_id" string="SLA Sub Type"/>
                     <field name="machine_serial_number" optional="show"/>

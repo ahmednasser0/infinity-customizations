@@ -49,34 +49,41 @@ class ContractType(models.Model):
     # Each abbreviation has its own SLA Sub Type field with only the values
     # that belong to it, shown (see the view) only when that abbreviation is
     # selected.
+    # Each of the six carries the label of the abbreviation it belongs to,
+    # not the bare 'SLA Sub Type' they all used to share. Odoo warns about
+    # fields of one model sharing a label, and it is right to: a search or
+    # group-by list showed 'SLA Sub Type' seven times over with no way to
+    # tell which was which. The form still shows them all as 'SLA Sub Type',
+    # since only one of them is ever visible at a time - see
+    # views/contract_type_views.xml, where that label is set.
     warranty_sub_type = fields.Selection([
         ('w_supplier', 'W-Supplier'),
         ('w_infinity', 'W-Infinity'),
         ('w_service_provider', 'W-Service Provider'),
         ('w_extend_infinity', 'W-Extend-Infinity'),
         ('w_extend_service_provider', 'W-Extend-Service Provider'),
-    ], string='SLA Sub Type')
+    ], string='Warranty SLA Sub Type')
     labor_sub_type = fields.Selection([
         ('labor_visits', 'Labor Visits'),
         ('labor_hours', 'Labor Hours'),
-    ], string='SLA Sub Type')
+    ], string='Labor SLA Sub Type')
     service_maintenance_sub_type = fields.Selection([
         ('service_maintenance_annual_contract', 'Service Maintenance Annual Contract'),
-    ], string='SLA Sub Type')
+    ], string='S.M.A SLA Sub Type')
     fsma_sub_type = fields.Selection([
         ('fsma_d', 'F.S.M.A (Default)'),
         ('fsma_to', 'F.S.M.A (Toner Out)'),
         ('fsma_md', 'F.S.M.A (Media In)'),
-    ], string='SLA Sub Type')
+    ], string='F.S.M.A SLA Sub Type')
     cost_per_click_sub_type = fields.Selection([
         ('leasing_insourcing', 'Leasing Insourcing - Cost Per Click'),
         ('leasing_outsourcing', 'Leasing Outsourcing - Cost Per Click'),
         ('rental_insourcing', 'Rental Insourcing - Cost Per Click'),
         ('rental_outsourcing', 'Rental Outsourcing - Cost Per Click'),
-    ], string='SLA Sub Type')
+    ], string='Cost Per Click SLA Sub Type')
     time_material_sub_type = fields.Selection([
         ('time_material', 'Time & Material'),
-    ], string='SLA Sub Type')
+    ], string='Time & Material SLA Sub Type')
 
     # Whichever of the fields above actually applies for this record's
     # abbreviation, collapsed into one technical value. Service Contract
