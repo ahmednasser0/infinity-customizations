@@ -331,7 +331,10 @@ class ProjectTask(models.Model):
         """This task's own Technical Report - the one the history is read
         against, for its visit date and its place in the day."""
         self.ensure_one()
-        return self._origin.technical_report_ids.filtered(
+        # active_test=False: an archived report is still this task's report.
+        # Without it the history would read the task as having none.
+        return self._origin.with_context(
+            active_test=False).technical_report_ids.filtered(
             lambda report: report.report_type == 'technical_report')[:1]
 
     def _infinity_own_job(self):
@@ -363,7 +366,10 @@ class ProjectTask(models.Model):
         """Return this task's report of the given type, creating it if the
         task predates the module (or the record was deleted)."""
         self.ensure_one()
-        report = self.technical_report_ids.filtered(
+        # active_test=False, or archiving a report would hide it from its own
+        # task and the button below would quietly make a second one.
+        report = self.with_context(
+            active_test=False).technical_report_ids.filtered(
             lambda r: r.report_type == report_type)[:1]
         if not report:
             report = self.env['infinity.technical.report'].create({

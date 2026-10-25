@@ -7,8 +7,13 @@
             <field name="model">infinity.technical.report</field>
             <field name="priority">10</field>
             <field name="arch" type="xml">
-                <form create="false" delete="false" duplicate="false">
+                <form create="false" duplicate="false">
                     <sheet>
+                        <!-- An archived record opens looking like any other
+                             without this, so say so on the record itself. -->
+                        <widget name="web_ribbon" title="Archived"
+                                bg_color="text-bg-danger" invisible="active"/>
+                        <field name="active" invisible="1"/>
                         <field name="task_id" invisible="1"/>
                         <field name="report_type" invisible="1"/>
                         <field name="name" invisible="1"/>
@@ -108,7 +113,7 @@
             <field name="model">infinity.technical.report</field>
             <field name="priority">30</field>
             <field name="arch" type="xml">
-                <form create="false" delete="false" duplicate="false">
+                <form create="false" duplicate="false">
                     <header>
                         <!-- The same report the Print menu offers, put
                              where an engineer finishing a visit will look for
@@ -126,6 +131,11 @@
                                 string="Print" type="object" class="btn-primary"/>
                     </header>
                     <sheet>
+                        <!-- An archived record opens looking like any other
+                             without this, so say so on the record itself. -->
+                        <widget name="web_ribbon" title="Archived"
+                                bg_color="text-bg-danger" invisible="active"/>
+                        <field name="active" invisible="1"/>
                         <field name="task_id" invisible="1"/>
                         <field name="report_type" invisible="1"/>
                         <field name="name" invisible="1"/>
@@ -252,7 +262,7 @@
             <field name="name">infinity.technical.report.list.all</field>
             <field name="model">infinity.technical.report</field>
             <field name="arch" type="xml">
-                <list string="Technical Reports" create="false" delete="false">
+                <list string="Technical Reports" create="false">
                     <field name="task_project_id"/>
                     <field name="task_name"/>
                     <field name="task_visit_type"/>
@@ -283,6 +293,10 @@
                     <filter name="groupby_customer" string="Customer" context="{'group_by': 'task_partner_id'}"/>
                     <filter name="groupby_stage" string="Stage" context="{'group_by': 'task_stage_id'}"/>
                     <filter name="groupby_visit_type" string="Visit Type" context="{'group_by': 'task_visit_type'}"/>
+                    <separator/>
+                    <!-- Archived records are hidden by default, so without
+                         this there is no way back to one that was put away. -->
+                    <filter name="inactive" string="Archived" domain="[('active', '=', False)]"/>
                     <filter name="groupby_machine" string="Machine Serial Number" context="{'group_by': 'machine_serial_number'}"/>
                 </search>
             </field>
@@ -293,7 +307,7 @@
             <field name="res_model">infinity.technical.report</field>
             <field name="view_mode">list,form</field>
             <field name="domain">[('report_type', '=', 'technical_report')]</field>
-            <field name="context">{'create': False, 'delete': False}</field>
+            <field name="context">{'create': False}</field>
             <field name="search_view_id" ref="infinity_technical_report_view_search_all"/>
         </record>
 
@@ -318,7 +332,7 @@
             <field name="name">infinity.technical.report.list.agreement</field>
             <field name="model">infinity.technical.report</field>
             <field name="arch" type="xml">
-                <list string="Agreements" create="false" delete="false">
+                <list string="Agreements" create="false">
                     <field name="task_project_id"/>
                     <field name="task_name"/>
                     <field name="agreement_partner_id"/>
@@ -337,7 +351,7 @@
             <field name="res_model">infinity.technical.report</field>
             <field name="view_mode">list,form</field>
             <field name="domain">[('report_type', '=', 'agreement')]</field>
-            <field name="context">{'create': False, 'delete': False}</field>
+            <field name="context">{'create': False}</field>
             <field name="search_view_id" ref="infinity_technical_report_view_search_all"/>
         </record>
 

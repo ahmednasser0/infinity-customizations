@@ -13,6 +13,18 @@ class TechnicalReport(models.Model):
         ('technical_report', 'Technical Report'),
     ], string='Report Type', default='agreement')
 
+    # Archiving, so a report can be put away without being destroyed: the
+    # visit it describes still happened, and a record of a visit to a
+    # customer's machine is not something to throw out because a screen got
+    # untidy. Deleting is available too - see the views - for the ones that
+    # should never have existed.
+    #
+    # Anything that looks up a task's reports has to ignore this field, or
+    # archiving one would read as the task having none and a second would be
+    # made in its place. project_task.py does that lookup, with
+    # active_test=False.
+    active = fields.Boolean(string='Active', default=True)
+
     task_name = fields.Char(related='task_id.name', string='Task Name', readonly=True)
 
     # The customer this agreement is with: the one the selected Sales Order
