@@ -12,7 +12,7 @@
     'application': True,
 
     'category': 'Uncategorized',
-    'version': '0.69',
+    'version': '0.70',
 
     # Stated rather than left to the default: a manifest odoo.sh cannot read
     # is reported as 'not installable', and these two make that reading
@@ -44,6 +44,7 @@
         'views/mrp_bom_views.xml',
         'views/hr_employee_views.xml',
         'views/res_company_views.xml',
+        'views/product_views.xml',
         'views/spare_parts_views.xml',
         'views/account_analytic_line_views.xml',
         'views/technical_report_pdf.xml',

@@ -1,0 +1,32 @@
+<odoo>
+    <data>
+
+        <!-- The machine's model and manufacturer, answered once here rather
+             than retyped on every Technical Report.
+
+             Added as a page of its own off the notebook on purpose. An
+             xpath onto a field inside the product form - default_code, or a
+             named group - is a guess about a screen that half of Odoo
+             extends, and an xpath that misses does not degrade: it stops
+             the whole module installing. //notebook is there on every
+             build of this form. -->
+        <record id="infinity_product_template_view_form_inherit" model="ir.ui.view">
+            <field name="name">product.template.form.infinity.machine</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="product.product_template_form_view"/>
+            <field name="arch" type="xml">
+                <xpath expr="//notebook" position="inside">
+                    <page string="Machine" name="infinity_machine">
+                        <group>
+                            <group>
+                                <field name="infinity_machine_model"/>
+                                <field name="infinity_manufacturer"/>
+                            </group>
+                        </group>
+                    </page>
+                </xpath>
+            </field>
+        </record>
+
+    </data>
+</odoo>

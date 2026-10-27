@@ -12,3 +12,4 @@ from . import spare_parts
 from . import account_analytic_line
 from . import hr_timesheet_stop_timer_wizard
 from . import res_company
+from . import product_template

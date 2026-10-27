@@ -47,7 +47,8 @@
                                 <field name="agreement_service_contract_id"/>
                                 <field name="agreement_full_name"/>
                                 <field name="agreement_abbreviation"/>
-                                <field name="agreement_machine_serial_number" string="Machine Serial Number"/>
+                                <field name="agreement_machine_serial_number" string="Printing Serial Number"/>
+                                <field name="agreement_it_serial_number" string="IT Serial Number"/>
                             </group>
                             <!-- and on what terms -->
                             <group>
@@ -59,7 +60,11 @@
                                     <field name="agreement_sla_unit" nolabel="1"/>
                                 </div>
                                 <field name="agreement_min_number_of_copies"/>
-                                <field name="agreement_max_number_of_copies"/>
+                                <label for="agreement_max_number_of_copies"/>
+                                <div class="o_row">
+                                    <field name="agreement_max_number_of_copies"/>
+                                    <field name="agreement_paper_size" nolabel="1"/>
+                                </div>
                             </group>
                         </group>
                         <group string="Details" invisible="not agreement_sale_order_id">
@@ -81,7 +86,7 @@
                             <!-- and what it includes -->
                             <group>
                                 <field name="agreement_spare_parts"
-                                       invisible="not ((agreement_full_name == 'warranty' and agreement_sub_type_value in ('w_supplier', 'w_infinity', 'w_service_provider')) or agreement_full_name == 'service_maintenance_annual_contract' or (agreement_full_name == 'full_service_maintenance_annual_contract' and agreement_sub_type_value in ('fsma_d', 'fsma_to', 'fsma_md')) or (agreement_full_name == 'cost_per_click' and agreement_sub_type_value in ('leasing_insourcing', 'leasing_outsourcing', 'rental_insourcing', 'rental_outsourcing')))"/>
+                                       invisible="not ((agreement_full_name == 'warranty' and agreement_sub_type_value in ('w_supplier', 'w_infinity', 'w_service_provider', 'w_extend_service_provider')) or agreement_full_name == 'service_maintenance_annual_contract' or (agreement_full_name == 'full_service_maintenance_annual_contract' and agreement_sub_type_value in ('fsma_d', 'fsma_to', 'fsma_md')) or (agreement_full_name == 'cost_per_click' and agreement_sub_type_value in ('leasing_insourcing', 'leasing_outsourcing', 'rental_insourcing', 'rental_outsourcing')))"/>
                                 <field name="agreement_pm_parts"
                                        invisible="not (agreement_full_name == 'service_maintenance_annual_contract' or (agreement_full_name == 'full_service_maintenance_annual_contract' and agreement_sub_type_value in ('fsma_d', 'fsma_to', 'fsma_md')) or (agreement_full_name == 'cost_per_click' and agreement_sub_type_value in ('leasing_insourcing', 'leasing_outsourcing', 'rental_insourcing', 'rental_outsourcing')))"/>
                                 <field name="agreement_consumables_including_image_unit"
@@ -226,8 +231,10 @@
                         <group string="Machine Data">
                             <group string="Machine">
                                 <field name="machine_serial_number" readonly="1"/>
-                                <field name="machine_model" readonly="visit_closed"/>
-                                <field name="manufacturer" readonly="visit_closed"/>
+                                <field name="it_serial_number" readonly="1"/>
+                                <!-- answered on the product, read here -->
+                                <field name="machine_model" readonly="1"/>
+                                <field name="manufacturer" readonly="1"/>
                             </group>
                             <group string="Counters">
                                 <field name="service_counter" readonly="visit_closed"/>
@@ -335,7 +342,7 @@
                     <!-- Archived records are hidden by default, so without
                          this there is no way back to one that was put away. -->
                     <filter name="inactive" string="Archived" domain="[('active', '=', False)]"/>
-                    <filter name="groupby_machine" string="Machine Serial Number" context="{'group_by': 'machine_serial_number'}"/>
+                    <filter name="groupby_machine" string="Printing Serial Number" context="{'group_by': 'machine_serial_number'}"/>
                 </search>
             </field>
         </record>

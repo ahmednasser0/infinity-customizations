@@ -422,7 +422,13 @@ class TechnicalReport(models.Model):
     # kept up to date. The rest is what the engineer standing in front of it
     # writes down.
     machine_serial_number = fields.Char(
-        string='Machine Serial Number',
+        string='Printing Serial Number',
+        compute='_compute_machine_serial_number', store=True,
+        readonly=True, index=True)
+    # Found the same way and from the same places as the one above, so the
+    # two numbers on a report are always the two numbers of one machine.
+    it_serial_number = fields.Char(
+        string='IT Serial Number',
         compute='_compute_machine_serial_number', store=True,
         readonly=True, index=True)
 
@@ -437,9 +443,35 @@ class TechnicalReport(models.Model):
     def _compute_machine_serial_number(self):
         for record in self:
             record.machine_serial_number = record._machine_serial() or False
+            record.it_serial_number = record._it_serial() or False
 
-    machine_model = fields.Char(string='Machine Model')
-    manufacturer = fields.Char(string='Manufacturer')
+    # Read off the product the machine is, not typed on the report. One
+    # machine model is one machine model however many visits it has had, so
+    # it is answered once on the product and read everywhere else.
+    #
+    # Not stored: a stored compute would write over whatever was typed into
+    # these before today, and what was typed is somebody's work. Unstored,
+    # the old columns simply stop being read - the words are still in the
+    # database if they are ever wanted back.
+    machine_model = fields.Char(
+        string='Machine Model', compute='_compute_machine_details')
+    manufacturer = fields.Char(
+        string='Manufacturer', compute='_compute_machine_details')
+
+    def _machine_product(self):
+        """The product the machine on this report is."""
+        self.ensure_one()
+        order = self._find_sale_order()
+        if not order:
+            return self.env['product.product']
+        return order.machine_lot_id.product_id
+
+    @api.depends('task_id', 'agreement_sale_order_id', 'machine_serial_number')
+    def _compute_machine_details(self):
+        for record in self:
+            product = record._machine_product()
+            record.machine_model = product.infinity_machine_model or False
+            record.manufacturer = product.infinity_manufacturer or False
 
     # All four are read off a meter that does not always land on a whole
     # number, so they are kept to two places rather than rounded on entry.
@@ -488,7 +520,12 @@ class TechnicalReport(models.Model):
         """
         self.ensure_one()
 
-        if self.sale_quotation_id:
+        # A quotation that is still a quotation is the one this report made,
+        # so it is opened rather than duplicated. One that has been
+        # confirmed is no longer open to having parts dropped into it - the
+        # customer has agreed to what was on it - so the parts added since
+        # are quoted afresh.
+        if self.sale_quotation_id and self._quotation_is_open():
             return self._open_quotation()
 
         lines = self.spare_requested_ids.filtered('product_id')
@@ -520,6 +557,40 @@ class TechnicalReport(models.Model):
         })
         self.sale_quotation_id = order
         return self._open_quotation()
+
+    def _quotation_is_open(self):
+        """Whether this report's quotation is still a quotation.
+
+        Draft and Sent are a quotation. Confirmed is an order somebody has
+        agreed to, and Cancelled is nothing at all - neither takes a part
+        added afterwards.
+        """
+        self.ensure_one()
+        return self.sale_quotation_id.state in ('draft', 'sent')
+
+    def _infinity_quote_lines(self, lines):
+        """Put these requested parts on this report's open quotation.
+
+        Called when a part is added to a report that already has one, so
+        the quotation keeps up with the report instead of being a snapshot
+        of the moment the button was pressed. Nothing happens where there
+        is no quotation, or where it has been confirmed: see above.
+        """
+        self.ensure_one()
+        if not (self.sale_quotation_id and self._quotation_is_open()):
+            return
+        lines = lines.filtered('product_id')
+        if not lines:
+            return
+        self.sale_quotation_id.write({
+            'order_line': [
+                (0, 0, {
+                    'product_id': line.product_id.id,
+                    'product_uom_qty': line.qty,
+                })
+                for line in lines
+            ],
+        })
 
     def _open_quotation(self):
         """The quotation this report made, on its own form."""
@@ -561,6 +632,29 @@ class TechnicalReport(models.Model):
             serial = (
                 order.service_contract_machine_serial_number
                 or order.service_contract_id.machine_serial_number
+                or ''
+            ).strip()
+            if serial:
+                return serial
+        return ''
+
+    def _it_serial(self):
+        """The IT serial of the same machine, found the same way.
+
+        Asked in the same order as the printing serial and over the same
+        orders, so a report cannot end up carrying two numbers that belong
+        to two different machines.
+        """
+        self.ensure_one()
+        orders = (
+            self.agreement_sale_order_id
+            or self._allowed_sale_orders()
+            or self.task_id._infinity_sale_order()
+        )
+        for order in orders:
+            serial = (
+                order.service_contract_it_serial_number
+                or order.service_contract_id.it_serial_number
                 or ''
             ).strip()
             if serial:
@@ -773,8 +867,19 @@ class TechnicalReport(models.Model):
     # Agreement form still shows it under the short name, where it is the
     # only serial on screen.
     agreement_machine_serial_number = fields.Char(
-        string='Contract Machine Serial Number',
+        string='Contract Printing Serial Number',
         compute='_compute_agreement', readonly=True)
+    # Named apart from it_serial_number for the same reason
+    # agreement_machine_serial_number is: two fields of one model sharing a
+    # label is what Odoo warns about, and a search list offering 'IT Serial
+    # Number' twice tells nobody which is which. The Agreement form shows it
+    # under the short name, where it is the only one on screen.
+    agreement_it_serial_number = fields.Char(
+        string='Contract IT Serial Number',
+        compute='_compute_agreement', readonly=True)
+    agreement_paper_size = fields.Selection([
+        ('a3', 'A3'), ('a4', 'A4'),
+    ], string='Paper Size', compute='_compute_agreement', readonly=True)
     agreement_min_number_of_copies = fields.Integer(
         string='Min Number of Copies', compute='_compute_agreement', readonly=True)
     agreement_max_number_of_copies = fields.Integer(
@@ -833,6 +938,8 @@ class TechnicalReport(models.Model):
                 'sla_unit': order.service_contract_sla_unit,
                 'hours': order.service_contract_hours,
                 'machine_serial_number': order.service_contract_machine_serial_number,
+                'it_serial_number': order.service_contract_it_serial_number,
+                'paper_size': order.service_contract_paper_size,
                 'min_number_of_copies': order.service_contract_min_number_of_copies,
                 'max_number_of_copies': order.service_contract_max_number_of_copies,
                 'volume': order.service_contract_volume,

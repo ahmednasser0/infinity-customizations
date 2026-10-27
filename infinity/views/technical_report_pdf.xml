@@ -173,12 +173,14 @@
                 </table>
                 <table class="inf-table">
                     <tr style="height:21pt;">
-                        <td class="inf-head" style="width:34%;">Serial Number</td>
-                        <td class="inf-head" style="width:33%;">Machine Model</td>
-                        <td class="inf-head">Manufacturer</td>
+                        <td class="inf-head" style="width:27%;">Printing Serial Number</td>
+                        <td class="inf-head" style="width:23%;">IT Serial Number</td>
+                        <td class="inf-head" style="width:25%;">Machine Model</td>
+                        <td class="inf-head" style="width:25%;">Manufacturer</td>
                     </tr>
                     <tr style="height:21pt;">
                         <td class="inf-c"><span t-field="doc.machine_serial_number"></span></td>
+                        <td class="inf-c"><span t-field="doc.it_serial_number"></span></td>
                         <td class="inf-c"><span t-field="doc.machine_model"></span></td>
                         <td class="inf-c"><span t-field="doc.manufacturer"></span></td>
                     </tr>

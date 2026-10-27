@@ -49,13 +49,14 @@ class SpareLine(models.AbstractModel):
         )
 
     @api.model
-    def _infinity_log(self, by_report, heading):
+    def _infinity_log(self, by_report):
         """One chatter entry per report, listing what happened to it.
 
         The list is built with Markup's own formatting, so a product called
         'Drum & Belt <A4>' reaches the chatter as those words rather than as
         broken markup or a hole in the page.
         """
+        heading = _('%s edited', self._infinity_section)
         for report, items in by_report.items():
             report.message_post(body=Markup('<p><b>%s</b></p><ul>%s</ul>') % (
                 heading,
@@ -69,9 +70,18 @@ class SpareLine(models.AbstractModel):
         for line in lines:
             if line.report_id:
                 by_report.setdefault(line.report_id, []).append(
-                    line._infinity_describe())
-        self._infinity_log(by_report, _('%s - added', self._infinity_section))
+                    _('added: %s', line._infinity_describe()))
+        self._infinity_log(by_report)
+        self._infinity_after_add(lines)
         return lines
+
+    def _infinity_after_add(self, lines):
+        """What happens beyond the log when lines arrive. Nothing, here.
+
+        Only the requested parts go on to a quotation - see the model
+        below. The installed ones are a record of what was fitted, not a
+        thing to charge for twice.
+        """
 
     def write(self, vals):
         changed = [name for name in self._infinity_logged if name in vals]
@@ -102,8 +112,9 @@ class SpareLine(models.AbstractModel):
                 ))
             if parts and line.report_id:
                 by_report.setdefault(line.report_id, []).append(
-                    '%s (%s)' % (line._infinity_describe(), ', '.join(parts)))
-        self._infinity_log(by_report, _('%s - changed', self._infinity_section))
+                    _('changed: %s (%s)',
+                      line._infinity_describe(), ', '.join(parts)))
+        self._infinity_log(by_report)
         return result
 
     @api.model
@@ -121,8 +132,8 @@ class SpareLine(models.AbstractModel):
         for line in self:
             if line.report_id:
                 by_report.setdefault(line.report_id, []).append(
-                    line._infinity_describe())
-        self._infinity_log(by_report, _('%s - removed', self._infinity_section))
+                    _('removed: %s', line._infinity_describe()))
+        self._infinity_log(by_report)
         return super().unlink()
 
 
@@ -132,6 +143,23 @@ class SpareRequested(models.Model):
     _description = 'Technical Report Spare Part Requested'
     _infinity_section = 'Spare Parts Requested'
     _infinity_logged = ('product_id', 'qty')
+
+    def _infinity_after_add(self, lines):
+        """Parts added after the quotation was made go onto it.
+
+        The quotation is meant to be what this report is asking for, and a
+        part asked for an hour later is still part of that. Where the
+        quotation has been confirmed the report leaves it alone and the
+        button makes a fresh one instead - see
+        technical_report.action_set_to_quotation.
+        """
+        by_report = {}
+        for line in lines:
+            if line.report_id:
+                by_report.setdefault(line.report_id, self.browse())
+                by_report[line.report_id] |= line
+        for report, added in by_report.items():
+            report._infinity_quote_lines(added)
     _order = 'report_id, id'
 
     report_id = fields.Many2one(

@@ -25,6 +25,8 @@ class SaleOrder(models.Model):
     # Snapshot source: sale.order field -> path from the Service Contract.
     _CONTRACT_SNAPSHOT = {
         'service_contract_machine_serial_number': 'machine_serial_number',
+        'service_contract_it_serial_number': 'it_serial_number',
+        'service_contract_paper_size': 'paper_size',
         'service_contract_from_date': 'from_date',
         'service_contract_to_date': 'to_date',
         'service_contract_sla': 'sla',
@@ -65,7 +67,7 @@ class SaleOrder(models.Model):
     # machine to an order there is one serial to report, and it is the first
     # line that names one.
     machine_lot_id = fields.Many2one(
-        'stock.lot', string='Machine Serial Number',
+        'stock.lot', string='Printing Serial Number',
         compute='_compute_machine_lot_id', store=True, readonly=True)
 
     @api.depends('order_line.machine_lot_id')
@@ -100,7 +102,10 @@ class SaleOrder(models.Model):
     # same form page under the same words, and since 0.59 they are not even
     # equals any more - the line's choice is what the report believes.
     service_contract_machine_serial_number = fields.Char(
-        string='Contract Machine Serial Number',
+        string='Contract Printing Serial Number',
+        compute='_compute_from_service_contract', store=True, readonly=False)
+    service_contract_it_serial_number = fields.Char(
+        string='IT Serial Number',
         compute='_compute_from_service_contract', store=True, readonly=False)
     service_contract_from_date = fields.Date(
         string='From Date',
@@ -121,6 +126,11 @@ class SaleOrder(models.Model):
         compute='_compute_from_service_contract', store=True, readonly=False)
     service_contract_max_number_of_copies = fields.Integer(
         string='Max Number of Copies',
+        compute='_compute_from_service_contract', store=True, readonly=False)
+    service_contract_paper_size = fields.Selection([
+        ('a3', 'A3'),
+        ('a4', 'A4'),
+    ], string='Paper Size',
         compute='_compute_from_service_contract', store=True, readonly=False)
     service_contract_volume = fields.Integer(
         string='Volume',
@@ -223,7 +233,7 @@ class SaleOrderLine(models.Model):
     # needs no asking and is filled in; several and the choice is the
     # seller's, which is what this is for.
     machine_lot_id = fields.Many2one(
-        'stock.lot', string='Machine Serial Number',
+        'stock.lot', string='Printing Serial Number',
         domain="[('product_id', '=', engine_product_id)]",
         compute='_compute_machine_lot_id', store=True, readonly=False)
 

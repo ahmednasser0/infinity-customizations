@@ -6,6 +6,9 @@ from odoo.exceptions import ValidationError
 CONTRACT_FIELDS = [
     'name',
     'machine_serial_number',
+    'it_serial_number',
+    'paper_size',
+    'included_copies',
     'from_date',
     'to_date',
     'sla',
@@ -35,7 +38,14 @@ class ServiceContract(models.Model):
     _name = 'infinity.service.contract'
     _description = 'Service Contract'
 
-    machine_serial_number = fields.Char(string='Machine Serial Number')
+    # Printing Serial Number is what this was always called on the
+    # paperwork; the technical name stays machine_serial_number, because
+    # renaming a column that four migrations and forty references already
+    # point at buys a tidier word and nothing else.
+    machine_serial_number = fields.Char(string='Printing Serial Number')
+    # The machine's other number - the one IT stuck on it, not the one the
+    # manufacturer did.
+    it_serial_number = fields.Char(string='IT Serial Number')
     from_date = fields.Date(string='From Date')
     to_date = fields.Date(string='To Date')
     sla = fields.Float(string='SLA')
@@ -45,6 +55,12 @@ class ServiceContract(models.Model):
     ], string='SLA Unit', default='hours')
     min_number_of_copies = fields.Integer(string='Min Number of Copies')
     max_number_of_copies = fields.Integer(string='Max Number of Copies')
+    # Shown beside Max Number of Copies: a copy count means one thing on A4
+    # and another on A3, so the number and the size are read together.
+    paper_size = fields.Selection([
+        ('a3', 'A3'),
+        ('a4', 'A4'),
+    ], string='Paper Size')
     volume = fields.Integer(string='Volume')
 
     # Lists Contract Types by their SLA Sub Type (see the Contract Type
@@ -69,12 +85,32 @@ class ServiceContract(models.Model):
     pm_parts = fields.Boolean(string='PM Parts', default=True)
     consumables_excluding_image_unit = fields.Boolean(string='Consumables Excluding Image Unit', default=True)
     consumables_including_image_unit = fields.Boolean(string='Consumables Including Image Unit', default=True)
+    # How many copies the image unit covers. Only asked for once the box
+    # above is ticked - see the view.
+    included_copies = fields.Float(string='Included Copies')
     plain_media = fields.Boolean(string='Plain Media', default=True)
     pre_printed_media = fields.Boolean(string='Pre-Printed Media', default=True)
     operators = fields.Boolean(string='Operators', default=True)
     owned_machines = fields.Boolean(string='Owned Machines', default=True)
     machines_rent = fields.Boolean(string='Machines Rent', default=True)
     site = fields.Boolean(string='Site', default=True)
+
+    # Left out of CONTRACT_FIELDS on purpose: two contracts that differ only
+    # in what somebody wrote in the margin are still the same contract.
+    notes = fields.Html(string='Notes')
+
+    @api.onchange('name')
+    def _onchange_name_consumables(self):
+        """F.S.M.A (Media In) starts with the image unit not included.
+
+        The field's default is True and stays True, because it is one field
+        shared by several contract types and the others want it on. Media In
+        is the one that does not, and the only moment that can be said is
+        when the sub type is picked.
+        """
+        for contract in self:
+            if contract.contract_type_sla_sub_type == 'fsma_md':
+                contract.consumables_including_image_unit = False
 
     @api.constrains('from_date', 'to_date')
     def _check_dates(self):
