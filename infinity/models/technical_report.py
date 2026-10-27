@@ -940,6 +940,40 @@ class TechnicalReport(models.Model):
             return self.env['sale.order']
         return self.task_id._infinity_sale_order()
 
+    # Every agreement_X on this model is the order's service_contract_X,
+    # named once. It used to be named twice - a dict of values and a list of
+    # field names to copy them into - and the two drifted the moment a field
+    # was added to one of them: the compute then left agreement_X unassigned
+    # and Odoo refused to read the record at all. Naming them once is what
+    # stops that happening again.
+    _AGREEMENT_SNAPSHOT = (
+        'from_date',
+        'to_date',
+        'sla',
+        'sla_unit',
+        'hours',
+        'machine_serial_number',
+        'it_serial_number',
+        'paper_size',
+        'min_number_of_copies',
+        'max_number_of_copies',
+        'volume',
+        'limited_rv_visits',
+        'limited_pm_visits',
+        'limited_em_visits',
+        'unlimited_em_visits',
+        'spare_parts',
+        'pm_parts',
+        'consumables_including_image_unit',
+        'consumables_excluding_image_unit',
+        'plain_media',
+        'pre_printed_media',
+        'operators',
+        'owned_machines',
+        'site',
+        'machines_rent',
+    )
+
     @api.depends('agreement_sale_order_id')
     def _compute_agreement(self):
         for record in self:
@@ -948,33 +982,7 @@ class TechnicalReport(models.Model):
             record.agreement_full_name = order.service_contract_full_name if order else False
             record.agreement_abbreviation = order.service_contract_abbreviation if order else False
             record.agreement_sub_type_value = order.service_contract_sub_type_value if order else False
-            values = {
-                'from_date': order.service_contract_from_date,
-                'to_date': order.service_contract_to_date,
-                'sla': order.service_contract_sla,
-                'sla_unit': order.service_contract_sla_unit,
-                'hours': order.service_contract_hours,
-                'machine_serial_number': order.service_contract_machine_serial_number,
-                'it_serial_number': order.service_contract_it_serial_number,
-                'paper_size': order.service_contract_paper_size,
-                'min_number_of_copies': order.service_contract_min_number_of_copies,
-                'max_number_of_copies': order.service_contract_max_number_of_copies,
-                'volume': order.service_contract_volume,
-                'limited_rv_visits': order.service_contract_limited_rv_visits,
-                'limited_pm_visits': order.service_contract_limited_pm_visits,
-                'limited_em_visits': order.service_contract_limited_em_visits,
-                'unlimited_em_visits': order.service_contract_unlimited_em_visits,
-                'spare_parts': order.service_contract_spare_parts,
-                'pm_parts': order.service_contract_pm_parts,
-                'consumables_including_image_unit': order.service_contract_consumables_including_image_unit,
-                'consumables_excluding_image_unit': order.service_contract_consumables_excluding_image_unit,
-                'plain_media': order.service_contract_plain_media,
-                'pre_printed_media': order.service_contract_pre_printed_media,
-                'operators': order.service_contract_operators,
-                'owned_machines': order.service_contract_owned_machines,
-                'site': order.service_contract_site,
-                'machines_rent': order.service_contract_machines_rent,
-            } if order else {}
-            for field_name in ['from_date', 'to_date', 'sla', 'sla_unit', 'hours', 'machine_serial_number', 'min_number_of_copies', 'max_number_of_copies', 'volume', 'limited_rv_visits', 'limited_pm_visits', 'limited_em_visits', 'unlimited_em_visits', 'spare_parts', 'pm_parts', 'consumables_including_image_unit', 'consumables_excluding_image_unit', 'plain_media', 'pre_printed_media', 'operators', 'owned_machines', 'site', 'machines_rent']:
-                record['agreement_' + field_name] = values.get(field_name, False)
+            for field_name in record._AGREEMENT_SNAPSHOT:
+                record['agreement_' + field_name] = (
+                    order['service_contract_' + field_name] if order else False)
 
