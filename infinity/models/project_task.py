@@ -397,6 +397,10 @@ class ProjectTask(models.Model):
                 'task_id': self.id,
                 'report_type': report_type,
             })
+        # The contract's IT serial, offered where the report has none. Done
+        # on the way to opening it rather than in a compute - see
+        # technical_report.it_serial_number for why.
+        report._infinity_fill_it_serial()
         return report
 
     def action_open_agreement(self):

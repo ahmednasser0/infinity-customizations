@@ -86,7 +86,7 @@
                             <!-- and what it includes -->
                             <group>
                                 <field name="agreement_spare_parts"
-                                       invisible="not ((agreement_full_name == 'warranty' and agreement_sub_type_value in ('w_supplier', 'w_infinity', 'w_service_provider', 'w_extend_service_provider')) or agreement_full_name == 'service_maintenance_annual_contract' or (agreement_full_name == 'full_service_maintenance_annual_contract' and agreement_sub_type_value in ('fsma_d', 'fsma_to', 'fsma_md')) or (agreement_full_name == 'cost_per_click' and agreement_sub_type_value in ('leasing_insourcing', 'leasing_outsourcing', 'rental_insourcing', 'rental_outsourcing')))"/>
+                                       invisible="not ((agreement_full_name == 'warranty' and agreement_sub_type_value in ('w_supplier', 'w_infinity', 'w_service_provider', 'w_extend_service_provider', 'w_extend_infinity')) or agreement_full_name == 'service_maintenance_annual_contract' or (agreement_full_name == 'full_service_maintenance_annual_contract' and agreement_sub_type_value in ('fsma_d', 'fsma_to', 'fsma_md')) or (agreement_full_name == 'cost_per_click' and agreement_sub_type_value in ('leasing_insourcing', 'leasing_outsourcing', 'rental_insourcing', 'rental_outsourcing')))"/>
                                 <field name="agreement_pm_parts"
                                        invisible="not (agreement_full_name == 'service_maintenance_annual_contract' or (agreement_full_name == 'full_service_maintenance_annual_contract' and agreement_sub_type_value in ('fsma_d', 'fsma_to', 'fsma_md')) or (agreement_full_name == 'cost_per_click' and agreement_sub_type_value in ('leasing_insourcing', 'leasing_outsourcing', 'rental_insourcing', 'rental_outsourcing')))"/>
                                 <field name="agreement_consumables_including_image_unit"
@@ -231,7 +231,9 @@
                         <group string="Machine Data">
                             <group string="Machine">
                                 <field name="machine_serial_number" readonly="1"/>
-                                <field name="it_serial_number" readonly="1"/>
+                                <!-- the engineer's to fill in, until the
+                                     report is closed out -->
+                                <field name="it_serial_number" readonly="visit_closed"/>
                                 <!-- answered on the product, read here -->
                                 <field name="machine_model" readonly="1"/>
                                 <field name="manufacturer" readonly="1"/>

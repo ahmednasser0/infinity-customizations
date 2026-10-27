@@ -425,12 +425,18 @@ class TechnicalReport(models.Model):
         string='Printing Serial Number',
         compute='_compute_machine_serial_number', store=True,
         readonly=True, index=True)
-    # Found the same way and from the same places as the one above, so the
-    # two numbers on a report are always the two numbers of one machine.
-    it_serial_number = fields.Char(
-        string='IT Serial Number',
-        compute='_compute_machine_serial_number', store=True,
-        readonly=True, index=True)
+    # Offered, not dictated. The contract's IT serial is put here when the
+    # report is opened and there is nothing in it yet, and from then on it
+    # belongs to the engineer standing in front of the machine - they can
+    # read the sticker, and the contract may never have been told it.
+    #
+    # Deliberately not a computed field, which is how the printing serial
+    # does it. A stored compute that left a typed value alone would have to
+    # read the field inside its own compute method to know there was one,
+    # and Odoo recomputes by marking the field unknown first - so that read
+    # is a recursion, not an answer. Filling it in from outside the compute
+    # has no such problem.
+    it_serial_number = fields.Char(string='IT Serial Number', index=True)
 
     # The order's own serial has to be watched, not just which order it is:
     # the number is filled in later, when the machine goes out on a
@@ -443,7 +449,18 @@ class TechnicalReport(models.Model):
     def _compute_machine_serial_number(self):
         for record in self:
             record.machine_serial_number = record._machine_serial() or False
-            record.it_serial_number = record._it_serial() or False
+
+    def _infinity_fill_it_serial(self):
+        """Put the contract's IT serial on reports that have none.
+
+        Only the empty ones: a number somebody typed is the number somebody
+        read off the machine, and the contract is the less reliable of the
+        two about a sticker.
+        """
+        for record in self.filtered(lambda report: not report.it_serial_number):
+            serial = record._it_serial()
+            if serial:
+                record.it_serial_number = serial
 
     # Read off the product the machine is, not typed on the report. One
     # machine model is one machine model however many visits it has had, so
