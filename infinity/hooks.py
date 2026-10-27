@@ -126,6 +126,44 @@ def claim_ts_labor_sequence(env):
     })
 
 
+# ---------------------------------------------------------------------------
+# The timer records what the timer measured
+# ---------------------------------------------------------------------------
+# Odoo rounds the time a task's timer measured before handing it to the
+# stop dialog: anything under the minimum becomes the minimum, and the rest
+# is rounded up to the next multiple. Both ship at 15 minutes, so a two
+# minute visit was being written down as fifteen.
+#
+# That rounding is a reasonable default for somebody who can correct the
+# figure on the way out. Since 0.66 nobody can - the box is readonly on
+# purpose, so the hours on a report are the hours the timer saw - and with
+# the correction gone the rounding stopped being a convenience and became a
+# wrong number that nothing can catch.
+#
+# Set as parameters rather than written as data records: ir.config_parameter
+# holds one row per key, these two rows already exist, and a data record
+# naming a key that is already there does not update it - it fails trying to
+# insert a second one. set_param writes whichever is the case.
+_TIMER_EXACT_PARAMS = (
+    ('timesheet_grid.timesheet_min_duration', '0'),
+    ('timesheet_grid.timesheet_rounding', '0'),
+)
+
+
+def set_timesheet_timer_exact(env):
+    """Stop the timesheet timer rounding the time it measured.
+
+    Applied when this module is installed and on every upgrade of it. It is
+    not a lock: somebody who puts 15 back in Settings afterwards will have
+    15 until the next upgrade puts it back. Locking it would mean the
+    Settings screen quietly refusing what it was told, which is worse than
+    a setting that can be changed by somebody who meant to change it.
+    """
+    for key, value in _TIMER_EXACT_PARAMS:
+        env['ir.config_parameter'].sudo().set_param(key, value)
+
+
 def post_init_hook(env):
     add_helpdesk_menus(env)
     claim_ts_labor_sequence(env)
+    set_timesheet_timer_exact(env)
