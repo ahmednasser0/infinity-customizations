@@ -4,6 +4,12 @@ from odoo.exceptions import UserError
 
 class TechnicalReport(models.Model):
     _name = 'infinity.technical.report'
+    # mail.thread for the chatter at the foot of the form. The spare parts
+    # are the reason for it: they stay editable after the report is closed
+    # out, so they are the one thing that can change afterwards, and a
+    # change nobody can see afterwards is a change nobody can answer for.
+    # The lines log themselves - see models/spare_parts.py.
+    _inherit = ['mail.thread']
     _description = 'Technical Report'
 
     name = fields.Char(string='Name', required=True, default='Agreement')
@@ -273,8 +279,17 @@ class TechnicalReport(models.Model):
     visit_start = fields.Datetime(string='Visit Start', readonly=True, copy=False)
     visit_end = fields.Datetime(string='Visit End', readonly=True, copy=False)
 
+    # What the form reads to grey itself out. A plain stored boolean, not a
+    # computed one, and that is the whole point: a computed field would be
+    # worked out again in the browser the instant somebody picked a status,
+    # so the counters and the diagnosis would grey out underneath an
+    # engineer who had not written them yet. This one is only ever set on
+    # the way through write(), so the form locks when the report is saved
+    # with a status - not while it is still being filled in.
+    visit_closed = fields.Boolean(string='Closed Out', readonly=True, copy=False)
+
     def write(self, vals):
-        """Stamp Visit End the first time a Task Status is given.
+        """Close the visit out the first time a Task Status is given.
 
         "As soon as I put a value in Task Status" - so the stamp is the
         moment the visit was first closed out, with whichever of the two
@@ -291,6 +306,11 @@ class TechnicalReport(models.Model):
             super(TechnicalReport, unstamped).write({
                 'visit_end': fields.Datetime.now(),
             })
+        # Set every time rather than only for the unstamped: a report closed
+        # out before this field existed has a status and no flag, and the
+        # first save after the upgrade should settle that too.
+        super(TechnicalReport, self.filtered(
+            lambda report: not report.visit_closed)).write({'visit_closed': True})
         return result
 
     # --- Serial Number ----------------------------------------------------

@@ -149,6 +149,8 @@
                         <widget name="web_ribbon" title="Archived"
                                 bg_color="text-bg-danger" invisible="active"/>
                         <field name="active" invisible="1"/>
+                        <!-- read by every readonly="visit_closed" below -->
+                        <field name="visit_closed" invisible="1"/>
                         <field name="task_id" invisible="1"/>
                         <field name="report_type" invisible="1"/>
                         <field name="name" invisible="1"/>
@@ -183,7 +185,7 @@
                             <group>
                                 <field name="task_no"/>
                                 <field name="work_order_no" readonly="1"/>
-                                <field name="report_date"/>
+                                <field name="report_date" readonly="visit_closed"/>
                                 <!-- Stamped, not typed: Visit Start when
                                      Start is pressed on the task, Visit End
                                      when a Task Status is first given. -->
@@ -196,7 +198,7 @@
                                      rows that have nothing in it. The form
                                      is where the answer is being demanded
                                      anyway. -->
-                                <field name="task_status" widget="radio"
+                                <field name="task_status" readonly="visit_closed" widget="radio"
                                        required="1"
                                        options="{'horizontal': true}"/>
                                 <field name="serial_number"/>
@@ -212,10 +214,10 @@
                         <!-- what the visit took -->
                         <group string="Time">
                             <group>
-                                <field name="work_time_hours"/>
+                                <field name="work_time_hours" readonly="visit_closed"/>
                             </group>
                             <group>
-                                <field name="travel_time_hours"/>
+                                <field name="travel_time_hours" readonly="visit_closed"/>
                             </group>
                         </group>
                         <!-- The serial is found, not chosen: the report
@@ -224,14 +226,14 @@
                         <group string="Machine Data">
                             <group string="Machine">
                                 <field name="machine_serial_number" readonly="1"/>
-                                <field name="machine_model"/>
-                                <field name="manufacturer"/>
+                                <field name="machine_model" readonly="visit_closed"/>
+                                <field name="manufacturer" readonly="visit_closed"/>
                             </group>
                             <group string="Counters">
-                                <field name="service_counter"/>
-                                <field name="total_counter"/>
-                                <field name="color_counter"/>
-                                <field name="black_counter"/>
+                                <field name="service_counter" readonly="visit_closed"/>
+                                <field name="total_counter" readonly="visit_closed"/>
+                                <field name="color_counter" readonly="visit_closed"/>
+                                <field name="black_counter" readonly="visit_closed"/>
                             </group>
                         </group>
                         <!-- Free text goes straight under the sheet rather
@@ -259,12 +261,12 @@
                              writes in. -->
                         <group>
                             <group string="Technical Diagnosis">
-                                <field name="technical_diagnosis" nolabel="1"
+                                <field name="technical_diagnosis" readonly="visit_closed" nolabel="1"
                                        colspan="2" widget="html"
                                        placeholder="What was found, and what was done about it..."/>
                             </group>
                             <group string="Customer Comments">
-                                <field name="customer_comments" nolabel="1"
+                                <field name="customer_comments" readonly="visit_closed" nolabel="1"
                                        colspan="2"
                                        placeholder="Anything the customer wanted noted..."/>
                             </group>
@@ -275,15 +277,20 @@
                              rather than a panel -->
                         <group string="Signatures">
                             <group>
-                                <field name="fse_signature" widget="signature"
+                                <field name="fse_signature" readonly="visit_closed" widget="signature"
                                        options="{'size': [0, 90]}"/>
                             </group>
                             <group>
-                                <field name="customer_signature" widget="signature"
+                                <field name="customer_signature" readonly="visit_closed" widget="signature"
                                        options="{'size': [0, 90]}"/>
                             </group>
                         </group>
                     </sheet>
+                    <!-- The spare parts stay editable after the report
+                         is closed out, so they are the one thing that
+                         can change afterwards. Each line writes what it
+                         did here - see models/spare_parts.py. -->
+                    <chatter/>
                 </form>
             </field>
         </record>
