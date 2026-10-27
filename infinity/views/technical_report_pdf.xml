@@ -342,7 +342,18 @@
             <field name="report_name">infinity.report_technical_report</field>
             <field name="report_file">infinity.report_technical_report</field>
             <field name="paperformat_id" ref="paperformat_technical_report"/>
-            <field name="binding_model_id" ref="model_infinity_technical_report"/>
+            <!-- Deliberately not bound to the model. A binding puts the
+                 report in the Print menu above the form, and that menu is
+                 built from the model rather than from the record in front of
+                 you - there is no condition to hang on it, so it would go on
+                 offering Print on a report with no Task Status however well
+                 the button in the header behaves. Unbound, the header button
+                 is the only way in, and it waits for a status.
+
+                 Written out as False rather than dropped from the record:
+                 leaving the line out keeps whatever the database already
+                 holds, and what it holds is the binding. -->
+            <field name="binding_model_id" eval="False"/>
             <field name="binding_type">report</field>
             <field name="print_report_name">'Technical Report - %s' % (object.serial_number or object.task_name or object.id)</field>
         </record>

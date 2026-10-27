@@ -1,4 +1,5 @@
 from odoo import _, api, fields, models
+from odoo.exceptions import UserError
 
 
 class TechnicalReport(models.Model):
@@ -436,6 +437,16 @@ class TechnicalReport(models.Model):
         module fails to install.
         """
         self.ensure_one()
+        # The button that calls this is hidden until there is a Task Status,
+        # so in ordinary use this never fires. It is here for the ways in
+        # that a hidden button does not cover - a call from elsewhere, or a
+        # binding still sitting in a database that has not had this version
+        # yet. "Print only once the visit has an outcome" is meant to be
+        # true of the report, not just of one button.
+        if not self.task_status:
+            raise UserError(_(
+                'This Technical Report has no Task Status yet. Say whether '
+                'the visit was Done or In Complete, and it can be printed.'))
         # printed from a list the report was never opened from, so the
         # serial is worked out again here too
         self._compute_machine_serial_number()
