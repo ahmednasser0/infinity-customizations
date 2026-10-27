@@ -259,8 +259,13 @@
                                        colspan="2"/>
                             </group>
                             <group string="Spare Parts Installed">
+                                <!-- Closed with the rest of the report. What
+                                     went into the machine is settled when
+                                     the visit ends; the requested list is
+                                     the one left open, because it is what
+                                     the quotation is still asking for. -->
                                 <field name="spare_installed_ids" nolabel="1"
-                                       colspan="2"/>
+                                       colspan="2" readonly="visit_closed"/>
                             </group>
                         </group>
                         <!-- The engineer's account and the customer's, one
