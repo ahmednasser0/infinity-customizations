@@ -362,6 +362,26 @@ class ProjectTask(models.Model):
             ])
         return tasks
 
+    def action_timer_start(self):
+        """Note the time the visit began, on the way to starting the timer.
+
+        Start is pressed on the task, and the time it records belongs on the
+        task's Technical Report, where the engineer writes the visit up. Only
+        the first Start counts: an engineer who stops for lunch and starts
+        again has not begun a second visit.
+
+        The timer itself is Odoo's (timer.mixin, through timesheet_grid) and
+        is left entirely alone - whatever it did before, it still does.
+        """
+        result = super().action_timer_start()
+        now = fields.Datetime.now()
+        for task in self:
+            report = task._get_technical_report(
+                'technical_report', 'Technical Report')
+            if report and not report.visit_start:
+                report.visit_start = now
+        return result
+
     def _get_technical_report(self, report_type, name):
         """Return this task's report of the given type, creating it if the
         task predates the module (or the record was deleted)."""

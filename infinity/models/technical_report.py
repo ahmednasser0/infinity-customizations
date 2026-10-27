@@ -264,6 +264,34 @@ class TechnicalReport(models.Model):
         ('in_complete', 'In Complete'),
     ], string='Task Status')
 
+    # --- When the visit began, and when it was closed out ------------------
+    # Both are stamped by code and never typed. readonly is set here as well
+    # as on the form on purpose: the attribute on the view only stops the
+    # box on screen, this stops anything else that would write a time by
+    # hand. A time somebody can edit is not a measurement, it is a claim.
+    visit_start = fields.Datetime(string='Visit Start', readonly=True, copy=False)
+    visit_end = fields.Datetime(string='Visit End', readonly=True, copy=False)
+
+    def write(self, vals):
+        """Stamp Visit End the first time a Task Status is given.
+
+        "As soon as I put a value in Task Status" - so the stamp is the
+        moment the visit was first closed out, with whichever of the two
+        answers it was closed out with. Correcting Done to In Complete an
+        hour later does not move it: the visit did not end twice. Clearing
+        the status does not clear it either, for the same reason.
+        """
+        if not vals.get('task_status'):
+            return super().write(vals)
+
+        unstamped = self.filtered(lambda report: not report.visit_end)
+        result = super().write(vals)
+        if unstamped:
+            super(TechnicalReport, unstamped).write({
+                'visit_end': fields.Datetime.now(),
+            })
+        return result
+
     # --- Serial Number ----------------------------------------------------
     # One running number per engineer - their name and how many reports they
     # have to their name this year, as Ahmad-000001 - starting again at 1
@@ -413,6 +441,66 @@ class TechnicalReport(models.Model):
         self._compute_machine_serial_number()
         return self.env.ref(
             'infinity.action_report_technical_report').report_action(self)
+
+    # --- The parts asked for, turned into a quotation ---------------------
+    # Remembered so a second press opens what the first press made, rather
+    # than quoting the same parts over again. Somebody pressing twice means
+    # "did that work?", not "do it twice".
+    sale_quotation_id = fields.Many2one(
+        'sale.order', string='Quotation', readonly=True, copy=False)
+
+    def action_set_to_quotation(self):
+        """Quote the Spare Parts Requested, for this customer and project.
+
+        Nothing is quoted where nothing was asked for: the button is left to
+        do nothing rather than complain, which is what was asked for.
+        """
+        self.ensure_one()
+
+        if self.sale_quotation_id:
+            return self._open_quotation()
+
+        lines = self.spare_requested_ids.filtered('product_id')
+        if not lines:
+            return False
+
+        partner = self.task_partner_id or self.agreement_partner_id
+        if not partner:
+            return False
+
+        order = self.env['sale.order'].create({
+            'partner_id': partner.id,
+            # sale_project's own field. Its view limits the choice to
+            # billable projects, but that is a domain on a dropdown, not a
+            # constraint - written from here any project is accepted, and
+            # since 0.60 every project is billable anyway.
+            'project_id': self.task_project_id.id or False,
+            'origin': self.serial_number or self.task_name or '',
+            'order_line': [
+                (0, 0, {
+                    'product_id': line.product_id.id,
+                    # The quantity as the engineer wrote it, including a
+                    # zero. A quantity nobody asked for is not a detail to
+                    # invent on their behalf.
+                    'product_uom_qty': line.qty,
+                })
+                for line in lines
+            ],
+        })
+        self.sale_quotation_id = order
+        return self._open_quotation()
+
+    def _open_quotation(self):
+        """The quotation this report made, on its own form."""
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': self.sale_quotation_id.display_name,
+            'res_model': 'sale.order',
+            'res_id': self.sale_quotation_id.id,
+            'view_mode': 'form',
+            'target': 'current',
+        }
 
     def _machine_serial(self):
         """The serial of the machine this report is about.
