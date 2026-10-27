@@ -1,8 +1,14 @@
 from odoo import models
 
 
-class StopTimerConfirmationWizard(models.TransientModel):
+class StopTimerConfirmationWizard(models.Model):
     """The dialog Odoo raises when the timer on a task is stopped.
+
+    models.Model, not TransientModel, despite the word wizard in its name:
+    Odoo refuses an extension that would turn a model transient, and this
+    one is not. The database said so - "transforms the model ... into a
+    transient model" - which is the sort of thing only the database can say
+    about a model that lives in Enterprise.
 
     It offers the measured time for editing. Visit Start and Visit End are
     stamped by code precisely so nobody has to be trusted to type them, and
