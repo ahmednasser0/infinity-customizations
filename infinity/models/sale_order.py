@@ -63,6 +63,15 @@ class SaleOrder(models.Model):
             if serial:
                 order.service_contract_machine_serial_number = serial
 
+    # Who the machine is actually going to, where that is not the customer
+    # the order was raised for - a dealer buying on somebody's behalf, say.
+    # Prefixed because sale.order is a model plenty of things extend, and a
+    # field called plainly end_customer_id would be a coin toss between
+    # adjusting somebody else's and shadowing it.
+    infinity_end_customer_id = fields.Many2one(
+        'res.partner', string='End Customer',
+        index='btree_not_null')
+
     # --- The machine that was sold ---------------------------------------
     # Which serial went out is chosen on the line that sells the machine,
     # beside the product it belongs to. The order only reports it: with one

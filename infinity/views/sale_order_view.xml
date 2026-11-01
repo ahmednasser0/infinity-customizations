@@ -19,6 +19,25 @@
             </field>
         </record>
 
+        <!-- End Customer, under the quotation template.
+
+             Inherited from sale_management's own view rather than from
+             sale.view_order_form, because sale_order_template_id is put
+             there by sale_management - an xpath onto it from the base form
+             would be looking for a field that may not have been added yet
+             when our turn comes. -->
+        <record id="infinity_sale_order_view_form_end_customer" model="ir.ui.view">
+            <field name="name">sale.order.form.infinity.end.customer</field>
+            <field name="model">sale.order</field>
+            <field name="inherit_id" ref="sale_management.sale_order_form_quote"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='sale_order_template_id']" position="after">
+                    <field name="infinity_end_customer_id"
+                           options="{'no_create': True}"/>
+                </xpath>
+            </field>
+        </record>
+
         <record id="infinity_sale_order_view_form_inherit" model="ir.ui.view">
             <field name="name">sale.order.form.infinity.contract.selection</field>
             <field name="model">sale.order</field>
