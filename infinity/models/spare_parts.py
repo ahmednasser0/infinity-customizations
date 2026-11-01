@@ -56,8 +56,15 @@ class SpareLine(models.AbstractModel):
         'Drum & Belt <A4>' reaches the chatter as those words rather than as
         broken markup or a hole in the page.
         """
-        heading = _('%s edited', self._infinity_section)
         for report, items in by_report.items():
+            # 'edited' only once the visit has been closed out. Up to then
+            # the report is being written for the first time and nothing is
+            # being edited - every line added while filling it in would be
+            # calling the first draft a correction.
+            heading = (
+                _('%s edited', self._infinity_section) if report.visit_closed
+                else self._infinity_section
+            )
             report.message_post(body=Markup('<p><b>%s</b></p><ul>%s</ul>') % (
                 heading,
                 Markup('').join(Markup('<li>%s</li>') % item for item in items),

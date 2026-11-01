@@ -436,7 +436,7 @@ class TechnicalReport(models.Model):
     # and Odoo recomputes by marking the field unknown first - so that read
     # is a recursion, not an answer. Filling it in from outside the compute
     # has no such problem.
-    it_serial_number = fields.Char(string='IT Serial Number', index=True)
+    it_serial_number = fields.Text(string='IT Serial Number')
 
     # The order's own serial has to be watched, not just which order it is:
     # the number is filled in later, when the machine goes out on a
@@ -891,7 +891,7 @@ class TechnicalReport(models.Model):
     # label is what Odoo warns about, and a search list offering 'IT Serial
     # Number' twice tells nobody which is which. The Agreement form shows it
     # under the short name, where it is the only one on screen.
-    agreement_it_serial_number = fields.Char(
+    agreement_it_serial_number = fields.Text(
         string='Contract IT Serial Number',
         compute='_compute_agreement', readonly=True)
     agreement_paper_size = fields.Selection([

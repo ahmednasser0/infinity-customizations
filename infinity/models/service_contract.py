@@ -45,7 +45,9 @@ class ServiceContract(models.Model):
     machine_serial_number = fields.Char(string='Printing Serial Number')
     # The machine's other number - the one IT stuck on it, not the one the
     # manufacturer did.
-    it_serial_number = fields.Char(string='IT Serial Number')
+    # Text, not Char: a machine can carry more than one IT number, and
+    # they belong on their own lines rather than run together in one.
+    it_serial_number = fields.Text(string='IT Serial Number')
     from_date = fields.Date(string='From Date')
     to_date = fields.Date(string='To Date')
     sla = fields.Float(string='SLA')

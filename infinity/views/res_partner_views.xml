@@ -1,0 +1,23 @@
+<odoo>
+    <data>
+
+        <!-- Above the address, where the rest of a contact's names are. -->
+        <record id="infinity_res_partner_view_form_inherit" model="ir.ui.view">
+            <field name="name">res.partner.form.infinity.names</field>
+            <field name="model">res.partner</field>
+            <field name="inherit_id" ref="base.view_partner_form"/>
+            <field name="arch" type="xml">
+                <!-- The street field itself is the anchor, not the div it
+                     sits in: o_address_street is a class, and a class is
+                     not something an xpath can rely on staying put. -->
+                <xpath expr="//field[@name='street']" position="before">
+                    <field name="infinity_arabic_name" placeholder="Arabic Name"
+                           class="o_address_street"/>
+                    <field name="infinity_abbreviation" placeholder="Abbreviation"
+                           class="o_address_street"/>
+                </xpath>
+            </field>
+        </record>
+
+    </data>
+</odoo>

@@ -27,6 +27,8 @@ class SaleOrder(models.Model):
         'service_contract_machine_serial_number': 'machine_serial_number',
         'service_contract_it_serial_number': 'it_serial_number',
         'service_contract_paper_size': 'paper_size',
+        'service_contract_consumables_including_image_unit':
+            'consumables_including_image_unit',
         'service_contract_from_date': 'from_date',
         'service_contract_to_date': 'to_date',
         'service_contract_sla': 'sla',
@@ -104,7 +106,7 @@ class SaleOrder(models.Model):
     service_contract_machine_serial_number = fields.Char(
         string='Contract Printing Serial Number',
         compute='_compute_from_service_contract', store=True, readonly=False)
-    service_contract_it_serial_number = fields.Char(
+    service_contract_it_serial_number = fields.Text(
         string='IT Serial Number',
         compute='_compute_from_service_contract', store=True, readonly=False)
     service_contract_from_date = fields.Date(
@@ -162,9 +164,14 @@ class SaleOrder(models.Model):
     service_contract_pm_parts = fields.Boolean(
         related='service_contract_id.pm_parts',
         string='PM Parts', readonly=True)
+    # Taken from the contract and then this order's own, the way the
+    # dates and the serials are. The others on this list stay related,
+    # which is why they cannot be edited: a related field writes back to
+    # what it is related to, so ticking it here would change the contract
+    # itself, and every other order on that contract with it.
     service_contract_consumables_including_image_unit = fields.Boolean(
-        related='service_contract_id.consumables_including_image_unit',
-        string='Consumables Including Image Unit', readonly=True)
+        string='Consumables Including Image Unit',
+        compute='_compute_from_service_contract', store=True, readonly=False)
     service_contract_consumables_excluding_image_unit = fields.Boolean(
         related='service_contract_id.consumables_excluding_image_unit',
         string='Consumables Excluding Image Unit', readonly=True)

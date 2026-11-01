@@ -237,6 +237,11 @@
                                 <!-- answered on the product, read here -->
                                 <field name="machine_model" readonly="1"/>
                                 <field name="manufacturer" readonly="1"/>
+                                <!-- off the Agreement, so the engineer can
+                                     read the allowance against the counters
+                                     beside it without leaving the page -->
+                                <field name="agreement_max_number_of_copies"
+                                       readonly="1"/>
                             </group>
                             <group string="Counters">
                                 <field name="service_counter" readonly="visit_closed"/>
