@@ -66,6 +66,20 @@ class SaleOrder(models.Model):
             if serial:
                 order.service_contract_machine_serial_number = serial
 
+    # Who the machine is actually going to, where that is not the customer
+    # the order was raised for - a dealer buying on somebody's behalf, say.
+    # Prefixed because sale.order is a model plenty of things extend.
+    #
+    # Not required, at either level. The field went in once before with
+    # required="1" on the view and came straight back out again: the builds
+    # that carried it failed their tests, and the ones without it passed.
+    # Odoo's own tests fill core forms through odoo.tests.Form, which
+    # enforces a view-level required, so a demand added here is a demand
+    # made of every other module's tests. It goes back in on its own first,
+    # and the demand follows once this much is known to build.
+    infinity_end_customer_id = fields.Many2one(
+        'res.partner', string='End Customer', index='btree_not_null')
+
     # The Technical Report this order was quoted from, where it was. One
     # report can end up with several: the first for what was asked for, and
     # another for each part asked for after an earlier one was confirmed.

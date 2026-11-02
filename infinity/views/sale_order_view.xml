@@ -19,6 +19,30 @@
             </field>
         </record>
 
+        <!-- End Customer, at the foot of the partner block.
+
+             Anchored on the group rather than on partner_shipping_id,
+             which carries groups="account.group_delivery_invoice_address"
+             and so is not a node to hang anything of our own beside.
+             partner_details is in the base sale form, named, and the only
+             one of its name in it.
+
+             no_quick_create, like the two fields above it: a contact typed
+             straight into the box would be a contact with none of the nine
+             things a contact is now asked for, so the quick create would
+             only ever fail, and fail unhelpfully. -->
+        <record id="infinity_sale_order_view_form_end_customer" model="ir.ui.view">
+            <field name="name">sale.order.form.infinity.end.customer</field>
+            <field name="model">sale.order</field>
+            <field name="inherit_id" ref="sale.view_order_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//group[@name='partner_details']" position="inside">
+                    <field name="infinity_end_customer_id"
+                           options="{'no_quick_create': True}"/>
+                </xpath>
+            </field>
+        </record>
+
         <record id="infinity_sale_order_view_form_inherit" model="ir.ui.view">
             <field name="name">sale.order.form.infinity.contract.selection</field>
             <field name="model">sale.order</field>
