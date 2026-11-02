@@ -29,10 +29,23 @@ class ProductProduct(models.Model):
     """
     _inherit = 'product.product'
 
+    # Writable on purpose, which for a related field means writing back to
+    # the template. That is right here and not a mistake to be corrected
+    # later: a machine's model and make belong to the product, not to one
+    # of its variants, so the template is where the answer is meant to
+    # land.
+    #
+    # It is also the only way to type them from where people actually
+    # stand. A Bill of Materials line names a product.product, so clicking
+    # through to the component ticked Engine opens the variant form - and
+    # that form is product_normal_form_view, which is a primary view
+    # inheriting the template's, so it already shows the Machine page. The
+    # page was there and the two boxes in it were grey, which is what made
+    # the value impossible to set.
     infinity_machine_model = fields.Char(
-        related='product_tmpl_id.infinity_machine_model', readonly=True)
+        related='product_tmpl_id.infinity_machine_model', readonly=False)
     infinity_manufacturer = fields.Char(
-        related='product_tmpl_id.infinity_manufacturer', readonly=True)
+        related='product_tmpl_id.infinity_manufacturer', readonly=False)
 
     def _infinity_engine_product(self):
         """The Engine component of this kit, or nothing where it is not one.
