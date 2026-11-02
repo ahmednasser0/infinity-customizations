@@ -114,6 +114,36 @@ class ServiceContract(models.Model):
             if contract.contract_type_sla_sub_type == 'fsma_md':
                 contract.consumables_including_image_unit = False
 
+    # --- The machine this contract is for ---------------------------------
+    # Worked out from the serial, not typed: the serial names a lot, the lot
+    # names the product, and the product is where the model and the make are
+    # answered - once, on the product, rather than again on every contract
+    # and every report.
+    #
+    # Unstored, so a contract whose serial is corrected shows the new
+    # machine on the next read rather than keeping the old one until
+    # something happens to recompute it.
+    machine_model = fields.Char(
+        string='Machine Model', compute='_compute_machine_details')
+    manufacturer = fields.Char(
+        string='Manufacturer', compute='_compute_machine_details')
+
+    def _machine_product(self):
+        """The product carrying this contract's Printing Serial Number."""
+        self.ensure_one()
+        serial = (self.machine_serial_number or '').strip()
+        if not serial:
+            return self.env['product.product']
+        lot = self.env['stock.lot'].search([('name', '=', serial)], limit=1)
+        return lot.product_id
+
+    @api.depends('machine_serial_number')
+    def _compute_machine_details(self):
+        for contract in self:
+            product = contract._machine_product()
+            contract.machine_model = product.infinity_machine_model or False
+            contract.manufacturer = product.infinity_manufacturer or False
+
     @api.constrains('from_date', 'to_date')
     def _check_dates(self):
         for contract in self:

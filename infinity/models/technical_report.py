@@ -476,12 +476,23 @@ class TechnicalReport(models.Model):
         string='Manufacturer', compute='_compute_machine_details')
 
     def _machine_product(self):
-        """The product the machine on this report is."""
+        """The product the machine on this report is.
+
+        The order's own lot first - that is the machine that actually went
+        out. Where there is no order, or none was chosen on its line, the
+        serial on the report names a lot of its own, which is how a report
+        under a contract that predates the kit still knows its machine.
+        """
         self.ensure_one()
         order = self._find_sale_order()
-        if not order:
+        product = order.machine_lot_id.product_id if order else False
+        if product:
+            return product
+        serial = (self.machine_serial_number or '').strip()
+        if not serial:
             return self.env['product.product']
-        return order.machine_lot_id.product_id
+        lot = self.env['stock.lot'].search([('name', '=', serial)], limit=1)
+        return lot.product_id
 
     @api.depends('task_id', 'agreement_sale_order_id', 'machine_serial_number')
     def _compute_machine_details(self):
@@ -894,6 +905,8 @@ class TechnicalReport(models.Model):
     agreement_it_serial_number = fields.Text(
         string='Contract IT Serial Number',
         compute='_compute_agreement', readonly=True)
+    agreement_included_copies = fields.Float(
+        string='Included Copies', compute='_compute_agreement', readonly=True)
     agreement_paper_size = fields.Selection([
         ('a3', 'A3'), ('a4', 'A4'),
     ], string='Paper Size', compute='_compute_agreement', readonly=True)
@@ -965,6 +978,7 @@ class TechnicalReport(models.Model):
         'spare_parts',
         'pm_parts',
         'consumables_including_image_unit',
+        'included_copies',
         'consumables_excluding_image_unit',
         'plain_media',
         'pre_printed_media',

@@ -12,7 +12,7 @@
     'application': True,
 
     'category': 'Uncategorized',
-    'version': '0.75',
+    'version': '0.79',
 
     # Stated rather than left to the default: a manifest odoo.sh cannot read
     # is reported as 'not installable', and these two make that reading
@@ -29,7 +29,7 @@
     # timesheet_grid is what the Timesheets 'To Validate' screen comes
     # from, and its list view is the one the SLA Sub Type column is added to.
     'depends': ['base', 'mail', 'project', 'hr', 'product', 'sale', 'sale_project',
-                'sale_stock', 'account', 'mrp', 'timesheet_grid'],
+                'sale_stock', 'stock', 'account', 'mrp', 'timesheet_grid'],
 
     # always loaded
     'data': [

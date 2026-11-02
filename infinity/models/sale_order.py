@@ -29,6 +29,7 @@ class SaleOrder(models.Model):
         'service_contract_paper_size': 'paper_size',
         'service_contract_consumables_including_image_unit':
             'consumables_including_image_unit',
+        'service_contract_included_copies': 'included_copies',
         'service_contract_from_date': 'from_date',
         'service_contract_to_date': 'to_date',
         'service_contract_sla': 'sla',
@@ -169,6 +170,10 @@ class SaleOrder(models.Model):
     # which is why they cannot be edited: a related field writes back to
     # what it is related to, so ticking it here would change the contract
     # itself, and every other order on that contract with it.
+    # Asked for only once the box above is ticked - see the view.
+    service_contract_included_copies = fields.Float(
+        string='Included Copies',
+        compute='_compute_from_service_contract', store=True, readonly=False)
     service_contract_consumables_including_image_unit = fields.Boolean(
         string='Consumables Including Image Unit',
         compute='_compute_from_service_contract', store=True, readonly=False)
