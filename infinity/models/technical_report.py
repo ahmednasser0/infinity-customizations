@@ -470,10 +470,16 @@ class TechnicalReport(models.Model):
     # these before today, and what was typed is somebody's work. Unstored,
     # the old columns simply stop being read - the words are still in the
     # database if they are ever wanted back.
-    machine_model = fields.Char(
-        string='Machine Model', compute='_compute_machine_details')
-    manufacturer = fields.Char(
-        string='Manufacturer', compute='_compute_machine_details')
+    # Filled in from the kit's Engine, typed where there is no kit, and
+    # Text because a machine takes more than one line to describe. Stored
+    # and editable: what an engineer corrects here is what the printed
+    # report carries, so it has to be kept.
+    machine_model = fields.Text(
+        string='Machine Model', compute='_compute_machine_details',
+        store=True, readonly=False)
+    manufacturer = fields.Text(
+        string='Manufacturer', compute='_compute_machine_details',
+        store=True, readonly=False)
 
     def _machine_product(self):
         """The product the machine on this report is.
@@ -496,10 +502,20 @@ class TechnicalReport(models.Model):
 
     @api.depends('task_id', 'agreement_sale_order_id', 'machine_serial_number')
     def _compute_machine_details(self):
+        """Answer from the kit's Engine, or leave the answer alone.
+
+        Where the machine is a Sales Kit, the component ticked Engine on
+        its Bill of Materials carries the model and the make. Where it is
+        not, nothing is written - the engineer's own words stay, and a
+        recompute does not wipe them on the way past.
+        """
         for record in self:
             product = record._machine_product()
-            record.machine_model = product.infinity_machine_model or False
-            record.manufacturer = product.infinity_manufacturer or False
+            engine = product._infinity_engine_product() if product else product
+            if not engine:
+                continue
+            record.machine_model = engine.infinity_machine_model or False
+            record.manufacturer = engine.infinity_manufacturer or False
 
     # All four are read off a meter that does not always land on a whole
     # number, so they are kept to two places rather than rounded on entry.
@@ -540,6 +556,33 @@ class TechnicalReport(models.Model):
     sale_quotation_id = fields.Many2one(
         'sale.order', string='Quotation', readonly=True, copy=False)
 
+    # Everything this report has ever quoted, the confirmed ones included.
+    # sale_quotation_id above is the one still being added to; this is the
+    # whole trail, which is what somebody looking at a report a month later
+    # actually wants.
+    sale_quotation_ids = fields.One2many(
+        'sale.order', 'infinity_technical_report_id',
+        string='Quotations', readonly=True)
+    sale_quotation_count = fields.Integer(
+        string='Quotations Count', compute='_compute_sale_quotation_count')
+
+    @api.depends('sale_quotation_ids')
+    def _compute_sale_quotation_count(self):
+        for record in self:
+            record.sale_quotation_count = len(record.sale_quotation_ids)
+
+    def action_open_quotations(self):
+        """Every quotation this report has produced."""
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Quotations'),
+            'res_model': 'sale.order',
+            'domain': [('infinity_technical_report_id', '=', self.id)],
+            'view_mode': 'list,form',
+            'context': {'create': False},
+        }
+
     def action_set_to_quotation(self):
         """Quote the Spare Parts Requested, for this customer and project.
 
@@ -572,6 +615,7 @@ class TechnicalReport(models.Model):
             # since 0.60 every project is billable anyway.
             'project_id': self.task_project_id.id or False,
             'origin': self.serial_number or self.task_name or '',
+            'infinity_technical_report_id': self.id,
             'order_line': [
                 (0, 0, {
                     'product_id': line.product_id.id,
@@ -595,6 +639,34 @@ class TechnicalReport(models.Model):
         """
         self.ensure_one()
         return self.sale_quotation_id.state in ('draft', 'sent')
+
+    def _infinity_quote_new(self, lines):
+        """Quote these parts on a quotation of their own.
+
+        Used when the parts arrive after the last quotation was confirmed:
+        that one is an order somebody agreed to and cannot take a new line,
+        so what was asked for since is quoted by itself.
+        """
+        self.ensure_one()
+        lines = lines.filtered('product_id')
+        partner = self.task_partner_id or self.agreement_partner_id
+        if not (lines and partner):
+            return
+        order = self.env['sale.order'].create({
+            'partner_id': partner.id,
+            'project_id': self.task_project_id.id or False,
+            'origin': self.serial_number or self.task_name or '',
+            'infinity_technical_report_id': self.id,
+            'order_line': [
+                (0, 0, {
+                    'product_id': line.product_id.id,
+                    'product_uom_qty': line.qty,
+                    'infinity_spare_line_id': line.id,
+                })
+                for line in lines
+            ],
+        })
+        self.sale_quotation_id = order
 
     def _infinity_quote_lines(self, lines):
         """Put these requested parts on this report's open quotation.
@@ -943,7 +1015,7 @@ class TechnicalReport(models.Model):
     agreement_it_serial_number = fields.Text(
         string='Contract IT Serial Number',
         compute='_compute_agreement', readonly=True)
-    agreement_included_copies = fields.Float(
+    agreement_included_copies = fields.Integer(
         string='Included Copies', compute='_compute_agreement', readonly=True)
     agreement_paper_size = fields.Selection([
         ('a3', 'A3'), ('a4', 'A4'),

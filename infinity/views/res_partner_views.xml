@@ -10,13 +10,14 @@
                 <!-- The other names this contact goes by, above the Tax ID -->
                 <xpath expr="//field[@name='vat']" position="before">
                     <field name="infinity_arabic_name" required="1"/>
-                    <field name="infinity_abbreviation" required="1"/>
+                    <field name="infinity_abbreviation"/>
                 </xpath>
 
                 <!-- and the document it comes with, under the tags -->
                 <xpath expr="//field[@name='category_id']" position="after">
                     <field name="infinity_attachment_name" invisible="1"/>
-                    <field name="infinity_attachment" filename="infinity_attachment_name"/>
+                    <field name="infinity_attachment" required="1"
+                           filename="infinity_attachment_name"/>
                 </xpath>
 
                 <!-- Demanded on the form rather than on the fields. These

@@ -35,11 +35,11 @@
                                 <field name="contract_type_name" readonly="1"/>
                                 <field name="machine_serial_number"/>
                                 <field name="it_serial_number"/>
-                                <!-- read off the product the serial belongs
-                                     to, so one machine reads the same on
-                                     every contract and every report -->
-                                <field name="machine_model" readonly="1"/>
-                                <field name="manufacturer" readonly="1"/>
+                                <!-- filled from the kit's Engine where the
+                                     serial names a kit, and typed where it
+                                     names an ordinary product -->
+                                <field name="machine_model"/>
+                                <field name="manufacturer"/>
                             </group>
                             <!-- and on what terms -->
                             <group>

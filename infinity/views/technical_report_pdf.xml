@@ -184,8 +184,8 @@
                              may hold more than one number, a line each. HTML
                              runs lines together without being told not to. -->
                         <td class="inf-c" style="white-space:pre-line;"><span t-field="doc.it_serial_number"></span></td>
-                        <td class="inf-c"><span t-field="doc.machine_model"></span></td>
-                        <td class="inf-c"><span t-field="doc.manufacturer"></span></td>
+                        <td class="inf-c" style="white-space:pre-line;"><span t-field="doc.machine_model"></span></td>
+                        <td class="inf-c" style="white-space:pre-line;"><span t-field="doc.manufacturer"></span></td>
                     </tr>
                 </table>
                 <table class="inf-table">

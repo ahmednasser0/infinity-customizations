@@ -49,6 +49,8 @@
                                 <field name="agreement_abbreviation"/>
                                 <field name="agreement_machine_serial_number" string="Printing Serial Number"/>
                                 <field name="agreement_it_serial_number" string="IT Serial Number"/>
+                                <field name="machine_model" readonly="1"/>
+                                <field name="manufacturer" readonly="1"/>
                             </group>
                             <!-- and on what terms -->
                             <group>
@@ -210,11 +212,14 @@
                                        options="{'horizontal': true}"/>
                                 <field name="serial_number"/>
                                 <field name="visit_count"/>
-                                <!-- what Set to Quotation made, so a second
-                                     press opens it instead of quoting the
-                                     same parts again -->
+                                <!-- the one still being added to, and the
+                                     whole trail beside it -->
                                 <field name="sale_quotation_id" readonly="1"
                                        invisible="not sale_quotation_id"/>
+                                <field name="sale_quotation_count" invisible="1"/>
+                                <field name="sale_quotation_ids" widget="many2many_tags"
+                                       readonly="1" string="Quotations"
+                                       invisible="sale_quotation_count &lt; 2"/>
                             </group>
                         </group>
                         <!-- readings taken on site, a line per machine -->
@@ -236,9 +241,13 @@
                                 <!-- the engineer's to fill in, until the
                                      report is closed out -->
                                 <field name="it_serial_number" readonly="visit_closed"/>
-                                <!-- answered on the product, read here -->
-                                <field name="machine_model" readonly="1"/>
-                                <field name="manufacturer" readonly="1"/>
+                                <!-- filled from the kit's Engine where
+                                     there is one, and the engineer's to
+                                     write where there is not -->
+                                <field name="machine_model"
+                                       readonly="visit_closed"/>
+                                <field name="manufacturer"
+                                       readonly="visit_closed"/>
                                 <!-- off the Agreement, so the engineer can
                                      read the allowance against the counters
                                      beside it without leaving the page -->

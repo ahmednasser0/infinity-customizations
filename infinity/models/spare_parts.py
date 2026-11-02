@@ -178,7 +178,15 @@ class SpareRequested(models.Model):
 
     def _infinity_after_add(self, lines):
         for report, added in self._infinity_by_report(lines).items():
-            report._infinity_quote_lines(added)
+            if not report.sale_quotation_id:
+                # nothing quoted yet - the button makes the first one
+                continue
+            if report._quotation_is_open():
+                report._infinity_quote_lines(added)
+            else:
+                # the last one has been confirmed, so these are quoted by
+                # themselves rather than squeezed into an agreed order
+                report._infinity_quote_new(added)
 
     def _infinity_after_change(self, lines):
         for report, changed in self._infinity_by_report(lines).items():

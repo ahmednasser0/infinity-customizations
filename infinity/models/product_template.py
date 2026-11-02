@@ -33,3 +33,26 @@ class ProductProduct(models.Model):
         related='product_tmpl_id.infinity_machine_model', readonly=True)
     infinity_manufacturer = fields.Char(
         related='product_tmpl_id.infinity_manufacturer', readonly=True)
+
+    def _infinity_engine_product(self):
+        """The Engine component of this kit, or nothing where it is not one.
+
+        A Sales Kit is sold as one thing and built of many, and the one
+        ticked Engine on its Bill of Materials is the machine - so that is
+        where its model and make are answered.
+
+        A product that is not a kit returns nothing on purpose, rather than
+        returning itself. The caller uses that to tell the two cases apart:
+        a kit answers for itself, and anything else is left for somebody to
+        type.
+        """
+        self.ensure_one()
+        Bom = self.env.get('mrp.bom')
+        if Bom is None:
+            return self.env['product.product']
+        found = Bom._bom_find(self, company_id=self.env.company.id,
+                              bom_type='phantom')
+        bom = found.get(self)
+        if not bom:
+            return self.env['product.product']
+        return bom.bom_line_ids.filtered('engine')[:1].product_id

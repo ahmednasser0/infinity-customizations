@@ -64,6 +64,13 @@ class SaleOrder(models.Model):
             if serial:
                 order.service_contract_machine_serial_number = serial
 
+    # The Technical Report this order was quoted from, where it was. One
+    # report can end up with several: the first for what was asked for, and
+    # another for each part asked for after an earlier one was confirmed.
+    infinity_technical_report_id = fields.Many2one(
+        'infinity.technical.report', string='Technical Report',
+        ondelete='set null', index='btree_not_null', copy=False)
+
     # --- The machine that was sold ---------------------------------------
     # Which serial went out is chosen on the line that sells the machine,
     # beside the product it belongs to. The order only reports it: with one
@@ -171,7 +178,7 @@ class SaleOrder(models.Model):
     # what it is related to, so ticking it here would change the contract
     # itself, and every other order on that contract with it.
     # Asked for only once the box above is ticked - see the view.
-    service_contract_included_copies = fields.Float(
+    service_contract_included_copies = fields.Integer(
         string='Included Copies',
         compute='_compute_from_service_contract', store=True, readonly=False)
     service_contract_consumables_including_image_unit = fields.Boolean(

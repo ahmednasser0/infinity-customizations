@@ -89,7 +89,7 @@ class ServiceContract(models.Model):
     consumables_including_image_unit = fields.Boolean(string='Consumables Including Image Unit', default=True)
     # How many copies the image unit covers. Only asked for once the box
     # above is ticked - see the view.
-    included_copies = fields.Float(string='Included Copies')
+    included_copies = fields.Integer(string='Included Copies')
     plain_media = fields.Boolean(string='Plain Media', default=True)
     pre_printed_media = fields.Boolean(string='Pre-Printed Media', default=True)
     operators = fields.Boolean(string='Operators', default=True)
@@ -123,10 +123,16 @@ class ServiceContract(models.Model):
     # Unstored, so a contract whose serial is corrected shows the new
     # machine on the next read rather than keeping the old one until
     # something happens to recompute it.
-    machine_model = fields.Char(
-        string='Machine Model', compute='_compute_machine_details')
-    manufacturer = fields.Char(
-        string='Manufacturer', compute='_compute_machine_details')
+    # Filled in from the kit, typed where there is no kit. Text rather
+    # than Char because a machine is often more than one line of
+    # description, and stored and editable because the answer for a
+    # product that is not a kit has to come from somebody.
+    machine_model = fields.Text(
+        string='Machine Model', compute='_compute_machine_details',
+        store=True, readonly=False)
+    manufacturer = fields.Text(
+        string='Manufacturer', compute='_compute_machine_details',
+        store=True, readonly=False)
 
     def _machine_product(self):
         """The product carrying this contract's Printing Serial Number."""
@@ -139,10 +145,21 @@ class ServiceContract(models.Model):
 
     @api.depends('machine_serial_number')
     def _compute_machine_details(self):
+        """Answer from the kit's Engine, or leave the answer alone.
+
+        A Sales Kit knows what it is: the component ticked Engine on its
+        Bill of Materials carries the model and the make. A product that is
+        not a kit knows nothing of the sort, and these fields are then left
+        exactly as they are - which is how somebody's typing survives a
+        recompute.
+        """
         for contract in self:
             product = contract._machine_product()
-            contract.machine_model = product.infinity_machine_model or False
-            contract.manufacturer = product.infinity_manufacturer or False
+            engine = product._infinity_engine_product() if product else product
+            if not engine:
+                continue
+            contract.machine_model = engine.infinity_machine_model or False
+            contract.manufacturer = engine.infinity_manufacturer or False
 
     @api.constrains('from_date', 'to_date')
     def _check_dates(self):
