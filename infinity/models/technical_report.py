@@ -78,6 +78,67 @@ class TechnicalReport(models.Model):
             partner = record._agreement_source_partner()
             record.agreement_partner_id = partner.commercial_partner_id or partner
 
+    # --- The end customer -------------------------------------------------
+    # The same five answers as above, about whoever the order names as the
+    # End Customer. Empty where the order names none.
+    #
+    # The depends run over stored relations only, for the reason spelt out
+    # under _CONTACT_DEPENDS: Odoo cannot search a computed unstored field
+    # to work out which reports to refresh, and says so on every write.
+    _END_CUSTOMER_DEPENDS = tuple(
+        'agreement_sale_order_id.infinity_end_customer_id%s.%s' % (hop, leaf)
+        for leaf in _ADDRESS_LEAVES
+        for hop in ('', '.child_ids')
+    ) + (
+        'agreement_sale_order_id.infinity_end_customer_id',
+        'agreement_sale_order_id.infinity_end_customer_id.child_ids',
+        'agreement_sale_order_id.infinity_end_customer_id.is_company',
+        'agreement_sale_order_id.infinity_end_customer_id.commercial_partner_id',
+    )
+
+    agreement_end_customer_id = fields.Many2one(
+        'res.partner', string='End Customer Name',
+        compute='_compute_agreement_end_customer')
+    agreement_end_customer_contact_id = fields.Many2one(
+        'res.partner', string='End Customer Contact',
+        compute='_compute_agreement_end_customer')
+    agreement_end_customer_phone = fields.Char(
+        string='End Customer Phone / Mobile',
+        compute='_compute_agreement_end_customer')
+    agreement_end_customer_email = fields.Char(
+        string='End Customer Email', compute='_compute_agreement_end_customer')
+    agreement_end_customer_address = fields.Char(
+        string='End Customer Address', compute='_compute_agreement_end_customer')
+
+    @api.depends(*_END_CUSTOMER_DEPENDS)
+    def _compute_agreement_end_customer(self):
+        """The end customer, split the way the customer above is.
+
+        A person inside a company is shown under that company; a company
+        outright stands as its own contact, falling through to the first
+        contact beneath it that can actually be reached, since a company
+        rarely carries a number of its own.
+        """
+        for record in self:
+            source = record.agreement_sale_order_id.infinity_end_customer_id
+            record.agreement_end_customer_id = (
+                (source.commercial_partner_id or source) if source else False)
+
+            if not source or not source.is_company:
+                contact = source
+            else:
+                reachable = source.child_ids.filtered(
+                    lambda child: child.phone or child.email)
+                contact = reachable[:1] or source
+            record.agreement_end_customer_contact_id = contact
+
+            record.agreement_end_customer_phone = contact.phone if contact else False
+            record.agreement_end_customer_email = contact.email if contact else False
+            record.agreement_end_customer_address = (
+                record._partner_address(contact)
+                or record._partner_address(record.agreement_end_customer_id)
+                or False)
+
     # Who to reach there - read-only as well, and live for the same reason,
     # since it comes off the same customer.
     agreement_contact_id = fields.Many2one(
