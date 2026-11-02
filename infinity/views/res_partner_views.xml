@@ -7,8 +7,8 @@
             <field name="inherit_id" ref="base.view_partner_form"/>
             <field name="arch" type="xml">
 
-                <!-- The other names this contact goes by, under the phone -->
-                <xpath expr="//field[@name='phone']" position="after">
+                <!-- The other names this contact goes by, above the Tax ID -->
+                <xpath expr="//field[@name='vat']" position="before">
                     <field name="infinity_arabic_name" required="1"/>
                     <field name="infinity_abbreviation" required="1"/>
                 </xpath>
