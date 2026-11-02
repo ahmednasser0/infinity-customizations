@@ -247,6 +247,14 @@ class SaleOrderLine(models.Model):
         for line in self:
             line.engine_product_id = line._infinity_engine_product()
 
+    # The requested spare part this line was quoted from, where it was.
+    # Without it a change to a part could only be matched back by product,
+    # which is a guess the moment the same product is asked for twice.
+    infinity_spare_line_id = fields.Many2one(
+        'infinity.technical.report.spare.requested',
+        string='Requested Spare Part', ondelete='set null', index='btree_not_null',
+        copy=False)
+
     # Which one of that machine went out. One serial to the product's name
     # needs no asking and is filled in; several and the choice is the
     # seller's, which is what this is for.

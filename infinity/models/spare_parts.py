@@ -85,10 +85,16 @@ class SpareLine(models.AbstractModel):
     def _infinity_after_add(self, lines):
         """What happens beyond the log when lines arrive. Nothing, here.
 
-        Only the requested parts go on to a quotation - see the model
-        below. The installed ones are a record of what was fitted, not a
-        thing to charge for twice.
+        Only the requested parts reach a quotation - see the model below.
+        The installed ones are a record of what was fitted, not a thing to
+        charge for twice.
         """
+
+    def _infinity_after_change(self, lines):
+        """Likewise, when a line is edited."""
+
+    def _infinity_before_remove(self, lines):
+        """Likewise, while a line still exists to be matched."""
 
     def write(self, vals):
         changed = [name for name in self._infinity_logged if name in vals]
@@ -122,6 +128,7 @@ class SpareLine(models.AbstractModel):
                     _('changed: %s (%s)',
                       line._infinity_describe(), ', '.join(parts)))
         self._infinity_log(by_report)
+        self._infinity_after_change(self)
         return result
 
     @api.model
@@ -141,6 +148,7 @@ class SpareLine(models.AbstractModel):
                 by_report.setdefault(line.report_id, []).append(
                     _('removed: %s', line._infinity_describe()))
         self._infinity_log(by_report)
+        self._infinity_before_remove(self)
         return super().unlink()
 
 
@@ -151,22 +159,34 @@ class SpareRequested(models.Model):
     _infinity_section = 'Spare Parts Requested'
     _infinity_logged = ('product_id', 'qty')
 
-    def _infinity_after_add(self, lines):
-        """Parts added after the quotation was made go onto it.
-
-        The quotation is meant to be what this report is asking for, and a
-        part asked for an hour later is still part of that. Where the
-        quotation has been confirmed the report leaves it alone and the
-        button makes a fresh one instead - see
-        technical_report.action_set_to_quotation.
-        """
+    # The quotation is meant to be what this report is asking for, so it
+    # keeps up: a part added goes onto it, a part edited is edited on it, a
+    # part withdrawn comes off it. All three stop at the same line - once
+    # the quotation has been confirmed it is an order somebody agreed to,
+    # and a report does not reach into that. Parts asked for after that go
+    # on a fresh quotation, through the button.
+    #
+    # All of this happens when the report is saved, because until then the
+    # lines do not exist for anything to be told about.
+    def _infinity_by_report(self, lines):
         by_report = {}
         for line in lines:
             if line.report_id:
                 by_report.setdefault(line.report_id, self.browse())
                 by_report[line.report_id] |= line
-        for report, added in by_report.items():
+        return by_report
+
+    def _infinity_after_add(self, lines):
+        for report, added in self._infinity_by_report(lines).items():
             report._infinity_quote_lines(added)
+
+    def _infinity_after_change(self, lines):
+        for report, changed in self._infinity_by_report(lines).items():
+            report._infinity_requote_lines(changed)
+
+    def _infinity_before_remove(self, lines):
+        for report, going in self._infinity_by_report(lines).items():
+            report._infinity_unquote_lines(going)
     _order = 'report_id, id'
 
     report_id = fields.Many2one(

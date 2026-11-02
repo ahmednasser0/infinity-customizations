@@ -676,10 +676,48 @@ class TechnicalReport(models.Model):
                 (0, 0, {
                     'product_id': line.product_id.id,
                     'product_uom_qty': line.qty,
+                    'infinity_spare_line_id': line.id,
                 })
                 for line in lines
             ],
         })
+
+    def _infinity_quoted_lines(self, lines):
+        """The quotation lines these requested parts were quoted as."""
+        self.ensure_one()
+        if not (self.sale_quotation_id and lines):
+            return self.env['sale.order.line']
+        return self.sale_quotation_id.order_line.filtered(
+            lambda order_line: order_line.infinity_spare_line_id in lines)
+
+    def _infinity_requote_lines(self, lines):
+        """Carry a change to these parts onto the open quotation."""
+        self.ensure_one()
+        if not (self.sale_quotation_id and self._quotation_is_open()):
+            return
+        for line in lines:
+            quoted = self._infinity_quoted_lines(line)
+            if not quoted:
+                # asked for after the quotation was made, or asked for
+                # again after being withdrawn
+                self._infinity_quote_lines(line)
+                continue
+            quoted.write({
+                'product_id': line.product_id.id,
+                'product_uom_qty': line.qty,
+            })
+
+    def _infinity_unquote_lines(self, lines):
+        """Take these parts off the open quotation.
+
+        A quotation that has been confirmed is left alone: the customer
+        agreed to what was on it, and a report cannot take a line out of
+        something somebody has already said yes to.
+        """
+        self.ensure_one()
+        if not (self.sale_quotation_id and self._quotation_is_open()):
+            return
+        self._infinity_quoted_lines(lines).unlink()
 
     def _open_quotation(self):
         """The quotation this report made, on its own form."""
