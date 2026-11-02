@@ -1,21 +1,54 @@
 <odoo>
     <data>
 
-        <!-- Above the address, where the rest of a contact's names are. -->
         <record id="infinity_res_partner_view_form_inherit" model="ir.ui.view">
-            <field name="name">res.partner.form.infinity.names</field>
+            <field name="name">res.partner.form.infinity</field>
             <field name="model">res.partner</field>
             <field name="inherit_id" ref="base.view_partner_form"/>
             <field name="arch" type="xml">
-                <!-- The street field itself is the anchor, not the div it
-                     sits in: o_address_street is a class, and a class is
-                     not something an xpath can rely on staying put. -->
-                <xpath expr="//field[@name='street']" position="before">
-                    <field name="infinity_arabic_name" placeholder="Arabic Name"
-                           class="o_address_street"/>
-                    <field name="infinity_abbreviation" placeholder="Abbreviation"
-                           class="o_address_street"/>
+
+                <!-- The other names this contact goes by, under the phone -->
+                <xpath expr="//field[@name='phone']" position="after">
+                    <field name="infinity_arabic_name" required="1"/>
+                    <field name="infinity_abbreviation" required="1"/>
                 </xpath>
+
+                <!-- and the document it comes with, under the tags -->
+                <xpath expr="//field[@name='category_id']" position="after">
+                    <field name="infinity_attachment_name" invisible="1"/>
+                    <field name="infinity_attachment" filename="infinity_attachment_name"/>
+                </xpath>
+
+                <!-- Demanded on the form rather than on the fields. These
+                     belong to Odoo, and a required field wants a NOT NULL
+                     column over a table that has held partners since long
+                     before anybody asked them for an address - the
+                     constraint could never be added, and every upgrade
+                     would log the failure. The form is where the answer is
+                     actually being asked for, and the only place where a
+                     person is the one answering. -->
+                <xpath expr="//field[@name='street']" position="attributes">
+                    <attribute name="required">1</attribute>
+                </xpath>
+                <xpath expr="//field[@name='city']" position="attributes">
+                    <attribute name="required">1</attribute>
+                </xpath>
+                <xpath expr="//field[@name='state_id']" position="attributes">
+                    <attribute name="required">1</attribute>
+                </xpath>
+                <xpath expr="//field[@name='zip']" position="attributes">
+                    <attribute name="required">1</attribute>
+                </xpath>
+                <xpath expr="//field[@name='country_id']" position="attributes">
+                    <attribute name="required">1</attribute>
+                </xpath>
+                <xpath expr="//field[@name='vat']" position="attributes">
+                    <attribute name="required">1</attribute>
+                </xpath>
+                <xpath expr="//field[@name='category_id']" position="attributes">
+                    <attribute name="required">1</attribute>
+                </xpath>
+
             </field>
         </record>
 

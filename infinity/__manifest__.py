@@ -46,6 +46,7 @@
         'views/res_company_views.xml',
         'views/product_views.xml',
         'views/res_partner_views.xml',
+        'views/res_partner_views.xml',
         'views/spare_parts_views.xml',
         'views/account_analytic_line_views.xml',
         'views/technical_report_pdf.xml',
