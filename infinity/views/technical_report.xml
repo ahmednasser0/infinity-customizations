@@ -23,7 +23,7 @@
                              invisible="not agreement_block_reason">
                             <field name="agreement_block_reason" nolabel="1" readonly="1"/>
                         </div>
-                        <group string="Customer Information">
+                        <group>
                             <group>
                                 <field name="task_name"/>
                                 <field name="task_project_id"/>
@@ -37,28 +37,6 @@
                                 <field name="agreement_contact_id" readonly="1"/>
                                 <field name="agreement_phone" widget="phone"/>
                                 <field name="agreement_email" widget="email"/>
-                                <field name="agreement_address"/>
-                            </group>
-                        </group>
-                        <!-- Who the machine is actually going to, where
-                             the order names somebody. Hidden entirely where
-                             it does not - an empty block of five labels
-                             says nothing worth the room. -->
-                        <group string="End Customer Information"
-                               invisible="not agreement_end_customer_id">
-                            <group>
-                                <field name="agreement_end_customer_id" readonly="1"
-                                       string="Customer Name"/>
-                                <field name="agreement_end_customer_contact_id"
-                                       readonly="1" string="Contact Person"/>
-                            </group>
-                            <group>
-                                <field name="agreement_end_customer_phone"
-                                       widget="phone" string="Phone / Mobile"/>
-                                <field name="agreement_end_customer_email"
-                                       widget="email" string="Email"/>
-                                <field name="agreement_end_customer_address"
-                                       string="Address"/>
                             </group>
                         </group>
                         <field name="agreement_sub_type_value" invisible="1"/>
@@ -184,7 +162,7 @@
                         <!-- who the visit is for. The same four the Agreement
                              shows, off the same Sales Order: the company, the
                              person to ask for, and how to reach them. -->
-                        <group string="Customer Information">
+                        <group string="General Information">
                             <group>
                                 <!-- the same field the Agreement calls
                                      Customer; on a report going out to site
@@ -197,27 +175,6 @@
                                 <field name="agreement_phone" widget="phone"/>
                                 <field name="agreement_email" widget="email"/>
                                 <field name="agreement_address"/>
-                            </group>
-                        </group>
-                        <!-- Who the machine is actually going to, where
-                             the order names somebody. Hidden entirely where
-                             it does not - an empty block of five labels
-                             says nothing worth the room. -->
-                        <group string="End Customer Information"
-                               invisible="not agreement_end_customer_id">
-                            <group>
-                                <field name="agreement_end_customer_id" readonly="1"
-                                       string="Customer Name"/>
-                                <field name="agreement_end_customer_contact_id"
-                                       readonly="1" string="Contact Person"/>
-                            </group>
-                            <group>
-                                <field name="agreement_end_customer_phone"
-                                       widget="phone" string="Phone / Mobile"/>
-                                <field name="agreement_end_customer_email"
-                                       widget="email" string="Email"/>
-                                <field name="agreement_end_customer_address"
-                                       string="Address"/>
                             </group>
                         </group>
                         <group>

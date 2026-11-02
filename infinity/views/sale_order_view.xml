@@ -19,32 +19,6 @@
             </field>
         </record>
 
-        <!-- End Customer, with the other partners on the order.
-
-             It was asked for under the quotation template, and that is
-             where 0.76 put it - by depending on sale_management, which
-             owns that field. That dependency is what stopped the module
-             loading on a database where sale_management is not installed:
-             a module cannot be placed when something it depends on is not
-             there, so infinity was skipped entirely and every screen of
-             ours went with it.
-
-             One field is not worth making a whole application a
-             requirement. partner_shipping_id is in the base sale form on
-             every build - sale_management's own view anchors onto it -
-             so the field lands a line or two higher and costs nothing. -->
-        <record id="infinity_sale_order_view_form_end_customer" model="ir.ui.view">
-            <field name="name">sale.order.form.infinity.end.customer</field>
-            <field name="model">sale.order</field>
-            <field name="inherit_id" ref="sale.view_order_form"/>
-            <field name="arch" type="xml">
-                <xpath expr="//field[@name='partner_shipping_id']" position="after">
-                    <field name="infinity_end_customer_id"
-                           options="{'no_create': True}"/>
-                </xpath>
-            </field>
-        </record>
-
         <record id="infinity_sale_order_view_form_inherit" model="ir.ui.view">
             <field name="name">sale.order.form.infinity.contract.selection</field>
             <field name="model">sale.order</field>
