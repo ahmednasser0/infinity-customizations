@@ -1015,6 +1015,18 @@ class TechnicalReport(models.Model):
     agreement_it_serial_number = fields.Text(
         string='Contract IT Serial Number',
         compute='_compute_agreement', readonly=True)
+    # What the contract says the machine is. Named apart from the report's
+    # own machine_model and manufacturer for the reason the serials above
+    # are: two fields of one model sharing a label is what Odoo warns about,
+    # and a search list offering 'Machine Model' twice tells nobody which is
+    # which. The Agreement group shows them under the short names, where
+    # they are the only pair on screen.
+    agreement_machine_model = fields.Text(
+        string='Contract Machine Model',
+        compute='_compute_agreement', readonly=True)
+    agreement_manufacturer = fields.Text(
+        string='Contract Manufacturer',
+        compute='_compute_agreement', readonly=True)
     agreement_included_copies = fields.Integer(
         string='Included Copies', compute='_compute_agreement', readonly=True)
     agreement_paper_size = fields.Selection([
@@ -1077,6 +1089,8 @@ class TechnicalReport(models.Model):
         'hours',
         'machine_serial_number',
         'it_serial_number',
+        'machine_model',
+        'manufacturer',
         'paper_size',
         'min_number_of_copies',
         'max_number_of_copies',

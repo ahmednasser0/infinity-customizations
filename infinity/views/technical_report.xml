@@ -49,8 +49,8 @@
                                 <field name="agreement_abbreviation"/>
                                 <field name="agreement_machine_serial_number" string="Printing Serial Number"/>
                                 <field name="agreement_it_serial_number" string="IT Serial Number"/>
-                                <field name="machine_model" readonly="1"/>
-                                <field name="manufacturer" readonly="1"/>
+                                <field name="agreement_machine_model" string="Machine Model"/>
+                                <field name="agreement_manufacturer" string="Manufacturer"/>
                             </group>
                             <!-- and on what terms -->
                             <group>

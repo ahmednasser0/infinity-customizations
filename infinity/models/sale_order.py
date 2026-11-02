@@ -26,6 +26,8 @@ class SaleOrder(models.Model):
     _CONTRACT_SNAPSHOT = {
         'service_contract_machine_serial_number': 'machine_serial_number',
         'service_contract_it_serial_number': 'it_serial_number',
+        'service_contract_machine_model': 'machine_model',
+        'service_contract_manufacturer': 'manufacturer',
         'service_contract_paper_size': 'paper_size',
         'service_contract_consumables_including_image_unit':
             'consumables_including_image_unit',
@@ -116,6 +118,19 @@ class SaleOrder(models.Model):
         compute='_compute_from_service_contract', store=True, readonly=False)
     service_contract_it_serial_number = fields.Text(
         string='IT Serial Number',
+        compute='_compute_from_service_contract', store=True, readonly=False)
+    # The machine the contract is for, as the contract answers it: off the
+    # component ticked Engine on the Sales Kit where there is one, and typed
+    # on the contract where there is not. Taken rather than related, like
+    # everything else here, so an order can be corrected without rewriting
+    # the contract and every other order on it.
+    #
+    # Text, because a machine is regularly more than one line of writing.
+    service_contract_machine_model = fields.Text(
+        string='Machine Model',
+        compute='_compute_from_service_contract', store=True, readonly=False)
+    service_contract_manufacturer = fields.Text(
+        string='Manufacturer',
         compute='_compute_from_service_contract', store=True, readonly=False)
     service_contract_from_date = fields.Date(
         string='From Date',

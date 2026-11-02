@@ -44,6 +44,8 @@
                             <group>
                                 <field name="service_contract_machine_serial_number"/>
                                 <field name="service_contract_it_serial_number"/>
+                                <field name="service_contract_machine_model"/>
+                                <field name="service_contract_manufacturer"/>
                                 <field name="service_contract_from_date"/>
                                 <field name="service_contract_to_date"/>
                                 <label for="service_contract_sla"/>
