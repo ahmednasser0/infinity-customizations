@@ -19,30 +19,6 @@
             </field>
         </record>
 
-        <!-- End Customer, beside the other partners on the order.
-
-             partner_shipping_id is in the base sale form on every build.
-             0.76 anchored this onto sale_order_template_id instead, which
-             meant depending on sale_management for the sake of a field's
-             position - and a module whose dependency is not installed is
-             not skipped politely, it is skipped entirely.
-
-             required on the view, not the field. Orders are raised by more
-             than people: a subscription renewing, a Field Service task
-             billing itself. A field-level required would refuse those, and
-             the person who was supposed to answer is not there to. -->
-        <record id="infinity_sale_order_view_form_end_customer" model="ir.ui.view">
-            <field name="name">sale.order.form.infinity.end.customer</field>
-            <field name="model">sale.order</field>
-            <field name="inherit_id" ref="sale.view_order_form"/>
-            <field name="arch" type="xml">
-                <xpath expr="//field[@name='partner_shipping_id']" position="after">
-                    <field name="infinity_end_customer_id" required="1"
-                           options="{'no_create': True}"/>
-                </xpath>
-            </field>
-        </record>
-
         <record id="infinity_sale_order_view_form_inherit" model="ir.ui.view">
             <field name="name">sale.order.form.infinity.contract.selection</field>
             <field name="model">sale.order</field>

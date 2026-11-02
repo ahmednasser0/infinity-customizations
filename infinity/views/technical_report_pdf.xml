@@ -168,42 +168,6 @@
                     </tr>
                 </table>
 
-                <!-- The end customer, in a block of its own under the one
-                     above and built the same way. Left out entirely where
-                     the order names nobody: an empty band with five empty
-                     cells under it reads as missing data rather than as
-                     data that was never there. -->
-                <t t-if="doc.agreement_end_customer_id">
-                    <table class="inf-table" style="margin-top:2pt;">
-                        <tr style="height:18pt;"><td class="inf-band">End Customer Information</td></tr>
-                    </table>
-                    <table class="inf-table">
-                        <tr style="height:30.6pt;">
-                            <td class="inf-head" style="width:16%;">Customer Name</td>
-                            <td style="width:34%;"><span t-esc="doc.agreement_end_customer_id.name"></span></td>
-                            <td class="inf-head" style="width:18%;">Contact Person</td>
-                            <td style="width:32%;"><span t-esc="doc.agreement_end_customer_contact_id.name"></span></td>
-                        </tr>
-                    </table>
-                    <table class="inf-table">
-                        <tr style="height:30.2pt;">
-                            <td class="inf-grey inf-c" rowspan="2" style="width:12%;">Address</td>
-                            <td class="inf-grey" style="width:16%; white-space:nowrap;">Governorate</td>
-                            <td style="width:17%;"><span t-esc="doc.agreement_end_customer_contact_id.state_id.name"></span></td>
-                            <td class="inf-top" rowspan="2" style="width:34%;">
-                                <strong>Full Address :</strong>
-                                <span t-field="doc.agreement_end_customer_address"></span>
-                            </td>
-                            <td style="font-size:10pt;"><strong>Tel : </strong><span t-field="doc.agreement_end_customer_phone"></span></td>
-                        </tr>
-                        <tr style="height:30.2pt;">
-                            <td class="inf-grey">City</td>
-                            <td><span t-esc="doc.agreement_end_customer_contact_id.city"></span></td>
-                            <td style="font-size:10pt;"><strong>Email : </strong><span t-field="doc.agreement_end_customer_email"></span></td>
-                        </tr>
-                    </table>
-                </t>
-
                 <table class="inf-table" style="margin-top:2pt;">
                     <tr style="height:20pt;"><td class="inf-band">Machine Data</td></tr>
                 </table>
