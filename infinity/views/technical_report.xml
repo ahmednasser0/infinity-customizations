@@ -285,13 +285,18 @@
                                 <!-- the engineer's to fill in, until the
                                      report is closed out -->
                                 <field name="it_serial_number" readonly="visit_closed"/>
-                                <!-- filled from the kit's Engine where
-                                     there is one, and the engineer's to
-                                     write where there is not -->
+                                <!-- read by the two below -->
+                                <field name="machine_from_kit" invisible="1"/>
+                                <!-- Closed where the kit's Engine answered
+                                     for them: that is the product's one
+                                     answer and not a visit's to differ
+                                     from. Open where there is no kit, or
+                                     no Engine on it - then nobody has
+                                     answered and the engineer does. -->
                                 <field name="machine_model"
-                                       readonly="visit_closed"/>
+                                       readonly="visit_closed or machine_from_kit"/>
                                 <field name="manufacturer"
-                                       readonly="visit_closed"/>
+                                       readonly="visit_closed or machine_from_kit"/>
                                 <!-- off the Agreement, so the engineer can
                                      read the allowance against the counters
                                      beside it without leaving the page -->

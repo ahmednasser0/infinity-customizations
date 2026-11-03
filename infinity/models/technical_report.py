@@ -549,6 +549,20 @@ class TechnicalReport(models.Model):
         string='Manufacturer', compute='_compute_machine_details',
         store=True, readonly=False)
 
+    # Whether the kit answered for the machine, which decides whether the
+    # two above are the engineer's to write. Where a Sales Kit names an
+    # Engine, the model and the make are the product's one answer and the
+    # form closes over them; where there is no kit, or no Engine on it,
+    # nobody has answered and the engineer does.
+    #
+    # Assigned on both paths, unlike the two fields above: those are left
+    # alone where there is no answer, so that a recompute does not wipe
+    # what somebody typed, and that is exactly why the flag cannot be read
+    # off whether they are filled in.
+    machine_from_kit = fields.Boolean(
+        string='Machine Answered by the Kit',
+        compute='_compute_machine_details', store=True)
+
     def _machine_product(self):
         """The product the machine on this report is.
 
@@ -580,6 +594,7 @@ class TechnicalReport(models.Model):
         for record in self:
             product = record._machine_product()
             engine = product._infinity_engine_product() if product else product
+            record.machine_from_kit = bool(engine)
             if not engine:
                 continue
             record.machine_model = engine.infinity_machine_model or False
@@ -704,6 +719,14 @@ class TechnicalReport(models.Model):
             'order_line': [
                 (0, 0, {
                     'product_id': line.product_id.id,
+                    # The description written here rather than left to be
+                    # computed. sale.order.line.name is a stored compute
+                    # with readonly=False, so a value given at create is
+                    # the value kept and nothing runs to decorate it - the
+                    # line reads as the product reads, and the words
+                    # 'Technical Report' stay off a customer's quotation.
+                    'name': line.product_id
+                            .get_product_multiline_description_sale(),
                     # The quantity as the engineer wrote it, including a
                     # zero. A quantity nobody asked for is not a detail to
                     # invent on their behalf.
@@ -745,6 +768,9 @@ class TechnicalReport(models.Model):
             'order_line': [
                 (0, 0, {
                     'product_id': line.product_id.id,
+                    # as above: the product's own words, nothing added
+                    'name': line.product_id
+                            .get_product_multiline_description_sale(),
                     'product_uom_qty': line.qty,
                     'infinity_spare_line_id': line.id,
                 })
@@ -771,6 +797,9 @@ class TechnicalReport(models.Model):
             'order_line': [
                 (0, 0, {
                     'product_id': line.product_id.id,
+                    # as above: the product's own words, nothing added
+                    'name': line.product_id
+                            .get_product_multiline_description_sale(),
                     'product_uom_qty': line.qty,
                     'infinity_spare_line_id': line.id,
                 })
@@ -800,6 +829,8 @@ class TechnicalReport(models.Model):
                 continue
             quoted.write({
                 'product_id': line.product_id.id,
+                'name': line.product_id
+                        .get_product_multiline_description_sale(),
                 'product_uom_qty': line.qty,
             })
 
