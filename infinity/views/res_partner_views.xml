@@ -50,6 +50,24 @@
                     <attribute name="required">1</attribute>
                 </xpath>
 
+                <!-- A company is not set up until somebody at it can be
+                     reached, so the Contacts tab has to have something in
+                     it before the first save. Anything in it counts - a
+                     person or an address - and on a company Odoo's own
+                     default for the tab is a contact person anyway.
+
+                     is_company rather than 1: the tab shows for an
+                     individual too, and a plain required would refuse
+                     every person ever entered as a customer.
+
+                     Odoo does enforce this. For a one2many its web client
+                     marks the field unset when required and the list is
+                     empty, the same as it does for a Char - see
+                     _checkValidity in web's relational_model/record.js. -->
+                <xpath expr="//field[@name='child_ids']" position="attributes">
+                    <attribute name="required">is_company</attribute>
+                </xpath>
+
             </field>
         </record>
 
