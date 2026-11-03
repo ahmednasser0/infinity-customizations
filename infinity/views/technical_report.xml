@@ -305,6 +305,12 @@
                                 <!-- the allowance and the size it is
                                      counted in, on one line: 50,000 means
                                      one thing on A4 and another on A3 -->
+                                <!-- Which order every contract term below
+                                     is read from. Shown because when they
+                                     all read zero this is the question,
+                                     and there was no way to see it. -->
+                                <field name="agreement_sale_order_id"
+                                       string="Sales Order" readonly="1"/>
                                 <label for="agreement_max_number_of_copies"/>
                                 <div class="o_row">
                                     <field name="agreement_max_number_of_copies"

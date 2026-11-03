@@ -1056,17 +1056,23 @@ class TechnicalReport(models.Model):
             partner = record.task_id.partner_id
             if record._agreement_block_reason():
                 record.agreement_sale_order_id = False
-            elif chosen and chosen.partner_id.commercial_partner_id == partner.commercial_partner_id:
+                continue
+
+            # A Technical Report follows its task's Agreement, because the
+            # Agreement is the only screen where the order is picked. Its
+            # own value is a guess and is not allowed to win. Not added to
+            # this compute's depends: the field it would watch is the field
+            # this compute writes, which is a cycle.
+            if record.report_type == 'technical_report':
+                sibling = record._agreement_sibling_order()
+                if sibling:
+                    record.agreement_sale_order_id = sibling
+                    continue
+
+            if chosen and chosen.partner_id.commercial_partner_id == partner.commercial_partner_id:
                 record.agreement_sale_order_id = chosen
             else:
-                found = record._find_sale_order()
-                if not found:
-                    # the Agreement's hand-picked order, where the task's
-                    # project does not lead to one. Not added to this
-                    # compute's depends: the field it would watch is the
-                    # field this compute writes, which is a cycle.
-                    found = record._agreement_sibling_order()
-                record.agreement_sale_order_id = found
+                record.agreement_sale_order_id = record._find_sale_order()
 
     # The orders that may be picked above: confirmed, for this task's project
     # and customer. Worked out here rather than as a domain on the field,
@@ -1238,7 +1244,15 @@ class TechnicalReport(models.Model):
         compute is no place to write.
         """
         self.ensure_one()
-        return self.agreement_sale_order_id or self._agreement_sibling_order()
+        # The sibling first, and that order matters. A Technical Report's
+        # form has no order field on it at all - look for
+        # agreement_sale_order_id in the views and it appears once, on the
+        # Agreement - so the value sitting on a report is never somebody's
+        # choice, it is _find_sale_order's guess from the task's project.
+        # A guess must not outrank the one order a person actually picked,
+        # and while it did, a report whose guess landed on another of that
+        # customer's orders read every contract term as zero.
+        return self._agreement_sibling_order() or self.agreement_sale_order_id
 
     def _agreement_sibling_order(self):
         """The order picked on this task's Agreement, read on its own.
