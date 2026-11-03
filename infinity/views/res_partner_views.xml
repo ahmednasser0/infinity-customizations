@@ -7,47 +7,66 @@
             <field name="inherit_id" ref="base.view_partner_form"/>
             <field name="arch" type="xml">
 
-                <!-- The other names this contact goes by, above the Tax ID -->
+                <!-- The flag every demand below hangs off, and the other
+                     names this contact goes by, above the Tax ID.
+
+                     The flag is a plain visible field and has to stay one:
+                     every condition in this file names it, and a condition
+                     over a field the view has not loaded does not quietly
+                     pass - Odoo's interpreter raises "Name is not defined"
+                     and the form stops. -->
                 <xpath expr="//field[@name='vat']" position="before">
-                    <field name="infinity_arabic_name" required="1"/>
+                    <field name="infinity_is_customer"/>
+                    <field name="infinity_arabic_name"
+                           required="infinity_is_customer"/>
                     <field name="infinity_abbreviation"/>
                 </xpath>
 
                 <!-- and the document it comes with, under the tags -->
                 <xpath expr="//field[@name='category_id']" position="after">
                     <field name="infinity_attachment_name" invisible="1"/>
-                    <field name="infinity_attachment" required="1"
+                    <field name="infinity_attachment"
+                           required="infinity_is_customer"
                            filename="infinity_attachment_name"/>
                 </xpath>
 
-                <!-- Demanded on the form rather than on the fields. These
-                     belong to Odoo, and a required field wants a NOT NULL
-                     column over a table that has held partners since long
-                     before anybody asked them for an address - the
-                     constraint could never be added, and every upgrade
-                     would log the failure. The form is where the answer is
-                     actually being asked for, and the only place where a
-                     person is the one answering. -->
+                <!-- Demanded on the form rather than on the fields, and
+                     only of a customer.
+
+                     On the form, because these belong to Odoo and a
+                     required field wants a NOT NULL column over a table
+                     that has held partners since long before anybody asked
+                     them for an address - the constraint could never be
+                     added, and every upgrade would log the failure. The
+                     form is also the only place where a person is the one
+                     answering.
+
+                     Of a customer only, because that is what makes the
+                     demands safe. Asked of every partner they would be
+                     asked of the ones nobody is filling in by hand - a
+                     vendor, a delivery address, the partner behind a new
+                     user, an import - and of every partner another
+                     module's tests create. -->
                 <xpath expr="//field[@name='street']" position="attributes">
-                    <attribute name="required">1</attribute>
+                    <attribute name="required">infinity_is_customer</attribute>
                 </xpath>
                 <xpath expr="//field[@name='city']" position="attributes">
-                    <attribute name="required">1</attribute>
+                    <attribute name="required">infinity_is_customer</attribute>
                 </xpath>
                 <xpath expr="//field[@name='state_id']" position="attributes">
-                    <attribute name="required">1</attribute>
+                    <attribute name="required">infinity_is_customer</attribute>
                 </xpath>
                 <xpath expr="//field[@name='zip']" position="attributes">
-                    <attribute name="required">1</attribute>
+                    <attribute name="required">infinity_is_customer</attribute>
                 </xpath>
                 <xpath expr="//field[@name='country_id']" position="attributes">
-                    <attribute name="required">1</attribute>
+                    <attribute name="required">infinity_is_customer</attribute>
                 </xpath>
                 <xpath expr="//field[@name='vat']" position="attributes">
-                    <attribute name="required">1</attribute>
+                    <attribute name="required">infinity_is_customer</attribute>
                 </xpath>
                 <xpath expr="//field[@name='category_id']" position="attributes">
-                    <attribute name="required">1</attribute>
+                    <attribute name="required">infinity_is_customer</attribute>
                 </xpath>
 
                 <!-- A company is not set up until somebody at it can be
@@ -76,7 +95,7 @@
                      for a Char - see _checkValidity in web's
                      relational_model/record.js. -->
                 <xpath expr="//field[@name='child_ids']" position="attributes">
-                    <attribute name="required">company_type == 'company'</attribute>
+                    <attribute name="required">infinity_is_customer and company_type == 'company'</attribute>
                 </xpath>
 
             </field>

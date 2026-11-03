@@ -11,6 +11,17 @@ class ResPartner(models.Model):
     """
     _inherit = 'res.partner'
 
+    # Whether this partner is one of ours to sell to, and so one we have
+    # to know properly. Every demand on this form hangs off it.
+    #
+    # It is what makes those demands safe to make at all. Asked of every
+    # partner, they would be asked of the ones Odoo creates by itself - a
+    # vendor, a delivery address, the partner behind each new user, a
+    # portal signup, an import, and every partner built in another
+    # module's tests. Off by default, they are asked only of the records
+    # somebody has actually marked as a customer.
+    infinity_is_customer = fields.Boolean(string='Is Customer')
+
     infinity_arabic_name = fields.Char(string='Arabic Name')
     infinity_abbreviation = fields.Char(string='Abbreviation')
 
