@@ -580,7 +580,7 @@ class TechnicalReport(models.Model):
         under a contract that predates the kit still knows its machine.
         """
         self.ensure_one()
-        order = self._find_sale_order()
+        order = self._agreement_order() or self._find_sale_order()
         product = order.machine_lot_id.product_id if order else False
         if product:
             return product
@@ -590,7 +590,9 @@ class TechnicalReport(models.Model):
         lot = self.env['stock.lot'].search([('name', '=', serial)], limit=1)
         return lot.product_id
 
-    @api.depends('task_id', 'agreement_sale_order_id', 'machine_serial_number')
+    @api.depends('task_id', 'agreement_sale_order_id', 'machine_serial_number',
+                 'task_id.technical_report_ids.agreement_sale_order_id',
+                 'agreement_sale_order_id.machine_lot_id')
     def _compute_machine_details(self):
         """Answer from the machine, or leave the answer alone.
 
@@ -1057,7 +1059,14 @@ class TechnicalReport(models.Model):
             elif chosen and chosen.partner_id.commercial_partner_id == partner.commercial_partner_id:
                 record.agreement_sale_order_id = chosen
             else:
-                record.agreement_sale_order_id = record._find_sale_order()
+                found = record._find_sale_order()
+                if not found:
+                    # the Agreement's hand-picked order, where the task's
+                    # project does not lead to one. Not added to this
+                    # compute's depends: the field it would watch is the
+                    # field this compute writes, which is a cycle.
+                    found = record._agreement_sibling_order()
+                record.agreement_sale_order_id = found
 
     # The orders that may be picked above: confirmed, for this task's project
     # and customer. Worked out here rather than as a domain on the field,
@@ -1208,6 +1217,45 @@ class TechnicalReport(models.Model):
             return self.env['sale.order']
         return self.task_id._infinity_sale_order()
 
+    def _agreement_order(self):
+        """The Sales Order every agreement_ field on this record reads.
+
+        This record's own, and failing that the one picked on its task's
+        Agreement.
+
+        A task carries two records of this model, an Agreement and a
+        Technical Report, and the order is chosen by hand on the Agreement
+        - that is the screen with the list of orders this task is allowed.
+        The Technical Report worked its own out from the task's project
+        instead, which finds nothing wherever the project and the order
+        are not joined by a stored field. So every contract term on the
+        report read as empty while the Agreement beside it showed them
+        all: the Max Copies was not failing to travel, it had no order to
+        travel from.
+
+        Read-only on purpose. task._get_technical_report() would do this
+        lookup too, but it creates the record when there is none, and a
+        compute is no place to write.
+        """
+        self.ensure_one()
+        return self.agreement_sale_order_id or self._agreement_sibling_order()
+
+    def _agreement_sibling_order(self):
+        """The order picked on this task's Agreement, read on its own.
+
+        Separate from _agreement_order so that the compute of
+        agreement_sale_order_id can use it: that method has already
+        decided not to keep this record's own value, and anything reading
+        the field again there would hand back the value just rejected.
+        """
+        self.ensure_one()
+        if self.report_type != 'technical_report' or not self.task_id:
+            return self.env['sale.order']
+        agreement = self.task_id.with_context(
+            active_test=False).technical_report_ids.filtered(
+            lambda other: other.report_type == 'agreement')[:1]
+        return agreement.agreement_sale_order_id
+
     # Every agreement_X on this model is the order's service_contract_X,
     # named once. It used to be named twice - a dict of values and a list of
     # field names to copy them into - and the two drifted the moment a field
@@ -1245,10 +1293,14 @@ class TechnicalReport(models.Model):
         'machines_rent',
     )
 
-    @api.depends('agreement_sale_order_id')
+    # The sibling's choice is watched as well as this record's own. Safe to
+    # depend on: this compute writes the agreement_ terms, never
+    # agreement_sale_order_id itself, so there is no cycle to fall into.
+    @api.depends('agreement_sale_order_id', 'task_id',
+                 'task_id.technical_report_ids.agreement_sale_order_id')
     def _compute_agreement(self):
         for record in self:
-            order = record.agreement_sale_order_id
+            order = record._agreement_order()
             record.agreement_service_contract_id = order.service_contract_id if order else False
             record.agreement_full_name = order.service_contract_full_name if order else False
             record.agreement_abbreviation = order.service_contract_abbreviation if order else False
