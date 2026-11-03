@@ -56,16 +56,27 @@
                      person or an address - and on a company Odoo's own
                      default for the tab is a contact person anyway.
 
-                     is_company rather than 1: the tab shows for an
+                     Asked of a company only: the tab shows for an
                      individual too, and a plain required would refuse
                      every person ever entered as a customer.
 
-                     Odoo does enforce this. For a one2many its web client
-                     marks the field unset when required and the list is
-                     empty, the same as it does for a Char - see
-                     _checkValidity in web's relational_model/record.js. -->
+                     company_type and not is_company, which is what 0.91
+                     wrote and why 0.91 did nothing. is_company appears in
+                     the partner form exactly once, inside the kanban
+                     embedded in this very field, so the form's own records
+                     never carry it - and a modifier naming a field the
+                     view does not load evaluates to nothing, which reads
+                     as 'not required' and lets every save through, person
+                     and company alike. company_type is the field the form
+                     actually holds; it is what the Individual / Company
+                     radio writes.
+
+                     For a one2many Odoo marks the field unset when it is
+                     required and the list is empty, the same as it does
+                     for a Char - see _checkValidity in web's
+                     relational_model/record.js. -->
                 <xpath expr="//field[@name='child_ids']" position="attributes">
-                    <attribute name="required">is_company</attribute>
+                    <attribute name="required">company_type == 'company'</attribute>
                 </xpath>
 
             </field>

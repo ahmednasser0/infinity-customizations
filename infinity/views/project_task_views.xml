@@ -27,6 +27,13 @@
                     <!-- Visits of the selected type this project has had for
                          this customer, against what the contract on the Sales
                          Order allows - click through to see them -->
+                    <!-- Loaded because the red count below is hidden on
+                         it. A condition over a field the view does not
+                         load evaluates to nothing, 'not nothing' is true,
+                         and the count it guards was invisible on every
+                         task since it was written - the feature was there
+                         and never once appeared. -->
+                    <field name="visit_over_allowance" invisible="1"/>
                     <button type="object" name="action_open_visit_count"
                             class="oe_stat_button" icon="fa-map-marker"
                             invisible="visit_type not in ('pm', 'emergency', 'rv')">
