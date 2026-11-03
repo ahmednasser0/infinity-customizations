@@ -46,7 +46,7 @@ class SaleOrder(models.Model):
     }
 
     @api.depends('service_contract_id', 'order_line.product_id',
-                 'machine_lot_id')
+                 'order_line.engine_product_id', 'machine_lot_id')
     def _compute_from_service_contract(self):
         for order in self:
             contract = order.service_contract_id
@@ -65,6 +65,23 @@ class SaleOrder(models.Model):
             serial = order._engine_serial_number()
             if serial:
                 order.service_contract_machine_serial_number = serial
+
+            # And the machine itself, for the same reason. A kit on the
+            # lines is the thing actually being sold, and the component
+            # ticked Engine on it is what the model and the make are
+            # answered from - so they appear as soon as the kit is put on
+            # the order, with no contract picked and no serial chosen yet.
+            #
+            # Each is taken only where the Engine has an answer. A kit
+            # whose Engine was never filled in must not blank what the
+            # contract said, or what somebody typed here.
+            engine = order._engine_product()
+            if engine.infinity_machine_model:
+                order.service_contract_machine_model = \
+                    engine.infinity_machine_model
+            if engine.infinity_manufacturer:
+                order.service_contract_manufacturer = \
+                    engine.infinity_manufacturer
 
     # Who the machine is actually going to, where that is not the customer
     # the order was raised for - a dealer buying on somebody's behalf, say.
@@ -106,6 +123,17 @@ class SaleOrder(models.Model):
         """The serial of the machine on this order, as the lines have it."""
         self.ensure_one()
         return self.machine_lot_id.name or ''
+
+    def _engine_product(self):
+        """The machine on this order, as the lines have it.
+
+        The line works it out from what it sells - a kit answers with the
+        component ticked Engine, anything else answers with nothing - and
+        the order reports the first line that names one, the way it reports
+        the first serial.
+        """
+        self.ensure_one()
+        return self.order_line.mapped('engine_product_id')[:1]
 
     # --- Contract Type identity ------------------------------------------
     # These name the contract type rather than set this order's terms, so

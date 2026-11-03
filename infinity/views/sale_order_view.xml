@@ -60,6 +60,15 @@
                                  shown here as what that choice came to. -->
                             <field name="machine_lot_id" readonly="1"
                                    invisible="not machine_lot_id"/>
+                            <!-- Off the component ticked Engine on the kit
+                                 the lines sell, so they are answered as
+                                 soon as the kit is chosen - before a
+                                 contract is picked and before a serial is.
+                                 Editable, for the machine that is sold as
+                                 itself rather than as a kit and so answers
+                                 nothing. -->
+                            <field name="service_contract_machine_model"/>
+                            <field name="service_contract_manufacturer"/>
                             <field name="service_contract_full_name"/>
                             <field name="service_contract_abbreviation"/>
                             <field name="service_contract_sub_type_value" invisible="1"/>
@@ -68,8 +77,6 @@
                             <group>
                                 <field name="service_contract_machine_serial_number"/>
                                 <field name="service_contract_it_serial_number"/>
-                                <field name="service_contract_machine_model"/>
-                                <field name="service_contract_manufacturer"/>
                                 <field name="service_contract_from_date"/>
                                 <field name="service_contract_to_date"/>
                                 <label for="service_contract_sla"/>
