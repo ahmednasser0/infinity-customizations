@@ -155,11 +155,12 @@ class ServiceContract(models.Model):
         """
         for contract in self:
             product = contract._machine_product()
-            engine = product._infinity_engine_product() if product else product
-            if not engine:
+            machine = (product._infinity_machine_product() if product
+                       else product)
+            if not machine:
                 continue
-            contract.machine_model = engine.infinity_machine_model or False
-            contract.manufacturer = engine.infinity_manufacturer or False
+            contract.machine_model = machine.infinity_machine_model or False
+            contract.manufacturer = machine.infinity_manufacturer or False
 
     @api.constrains('from_date', 'to_date')
     def _check_dates(self):

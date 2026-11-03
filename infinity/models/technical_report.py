@@ -593,12 +593,13 @@ class TechnicalReport(models.Model):
         """
         for record in self:
             product = record._machine_product()
-            engine = product._infinity_engine_product() if product else product
-            record.machine_from_kit = bool(engine)
-            if not engine:
+            machine = (product._infinity_machine_product() if product
+                       else product)
+            record.machine_from_kit = bool(machine)
+            if not machine:
                 continue
-            record.machine_model = engine.infinity_machine_model or False
-            record.manufacturer = engine.infinity_manufacturer or False
+            record.machine_model = machine.infinity_machine_model or False
+            record.manufacturer = machine.infinity_manufacturer or False
 
     # All four are read off a meter that does not always land on a whole
     # number, so they are kept to two places rather than rounded on entry.

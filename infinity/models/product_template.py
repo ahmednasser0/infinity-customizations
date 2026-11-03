@@ -69,3 +69,32 @@ class ProductProduct(models.Model):
         if not bom:
             return self.env['product.product']
         return bom.bom_line_ids.filtered('engine')[:1].product_id
+
+    def _infinity_machine_product(self):
+        """The product that answers for the machine, starting from this one.
+
+        Two cases, and the second is the one that actually turns up.
+
+        A Sales Kit answers with the component ticked Engine on its Bill
+        of Materials.
+
+        A product that is itself ticked Engine on some kit's Bill of
+        Materials answers with itself. A serial number belongs to the
+        machine, not to the kit it was sold inside, so the lot on the
+        order line is the Engine's lot and the product reached through it
+        is the Engine - and asking the Engine for its own Engine returned
+        nothing, which is why the model and the make arrived empty and the
+        fields stayed open. It is a machine; it answers for itself.
+
+        Anything else answers with nothing, and is somebody's to type.
+        """
+        self.ensure_one()
+        engine = self._infinity_engine_product()
+        if engine:
+            return engine
+        Line = self.env.get('mrp.bom.line')
+        if Line is not None and Line.search_count(
+                [('product_id', '=', self.id), ('engine', '=', True)],
+                limit=1):
+            return self
+        return self.env['product.product']
