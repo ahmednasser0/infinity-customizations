@@ -624,27 +624,44 @@ class TechnicalReport(models.Model):
     sale_quotation_id = fields.Many2one(
         'sale.order', string='Quotation', readonly=True, copy=False)
 
-    # Everything this report has ever quoted, the confirmed ones included.
-    # sale_quotation_id above is the one still being added to; this is the
-    # whole trail, which is what somebody looking at a report a month later
-    # actually wants.
+    # The trail this report has left on the Sales side, in two halves: what
+    # is still being asked for, and what somebody has actually agreed to.
+    # One box held both before, and a report with four orders against it
+    # could not be read: there was no telling which of them was money and
+    # which was a question.
+    #
+    # Both read the same inverse field and differ only by state, so an
+    # order moves from the first box to the second by being confirmed, with
+    # nothing here to keep in step.
+    #
+    # A cancelled order is in neither box. It is not being asked for any
+    # more and it was never agreed to, so it belongs under neither heading.
+    # Nothing on this form lists it: action_open_quotations below would,
+    # but no button calls it yet.
     sale_quotation_ids = fields.One2many(
         'sale.order', 'infinity_technical_report_id',
-        string='Quotations', readonly=True)
-    sale_quotation_count = fields.Integer(
-        string='Quotations Count', compute='_compute_sale_quotation_count')
-
-    @api.depends('sale_quotation_ids')
-    def _compute_sale_quotation_count(self):
-        for record in self:
-            record.sale_quotation_count = len(record.sale_quotation_ids)
+        string='Quotations', domain=[('state', 'in', ('draft', 'sent'))],
+        readonly=True)
+    # Labelled apart from agreement_sale_order_id, which is the one order
+    # this report reads its contract from. Two fields of one model sharing
+    # a label is what Odoo warns about, and 'Sales Order' beside 'Sales
+    # Orders' in a search list tells nobody which is which. The form shows
+    # this one as Sales Orders, where it is the only one of its kind on
+    # screen.
+    sale_order_ids = fields.One2many(
+        'sale.order', 'infinity_technical_report_id',
+        string='Sales Orders From This Report',
+        domain=[('state', '=', 'sale')], readonly=True)
 
     def action_open_quotations(self):
-        """Every quotation this report has produced."""
+        """Every order this report has produced, in whatever state.
+
+        Including the cancelled ones, which neither box on the form shows.
+        """
         self.ensure_one()
         return {
             'type': 'ir.actions.act_window',
-            'name': _('Quotations'),
+            'name': _('Quotations and Orders'),
             'res_model': 'sale.order',
             'domain': [('infinity_technical_report_id', '=', self.id)],
             'view_mode': 'list,form',

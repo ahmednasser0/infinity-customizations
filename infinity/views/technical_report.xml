@@ -253,14 +253,17 @@
                                        options="{'horizontal': true}"/>
                                 <field name="serial_number"/>
                                 <field name="visit_count"/>
-                                <!-- the one still being added to, and the
-                                     whole trail beside it -->
-                                <field name="sale_quotation_id" readonly="1"
-                                       invisible="not sale_quotation_id"/>
-                                <field name="sale_quotation_count" invisible="1"/>
+                                <!-- what is still being asked for, and
+                                     what has been agreed to. Each box is
+                                     left off the screen while it is empty
+                                     rather than shown as a label over
+                                     nothing. -->
                                 <field name="sale_quotation_ids" widget="many2many_tags"
                                        readonly="1" string="Quotations"
-                                       invisible="sale_quotation_count &lt; 2"/>
+                                       invisible="not sale_quotation_ids"/>
+                                <field name="sale_order_ids" widget="many2many_tags"
+                                       readonly="1" string="Sales Orders"
+                                       invisible="not sale_order_ids"/>
                             </group>
                         </group>
                         <!-- readings taken on site, a line per machine -->
