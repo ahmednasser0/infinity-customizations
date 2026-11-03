@@ -286,17 +286,19 @@
                                      report is closed out -->
                                 <field name="it_serial_number" readonly="visit_closed"/>
                                 <!-- read by the two below -->
-                                <field name="machine_from_kit" invisible="1"/>
-                                <!-- Closed where the kit's Engine answered
-                                     for them: that is the product's one
+                                <field name="machine_model_from_kit" invisible="1"/>
+                                <field name="manufacturer_from_kit" invisible="1"/>
+                                <!-- Each closed where the machine answered
+                                     for it: that is the product's one
                                      answer and not a visit's to differ
-                                     from. Open where there is no kit, or
-                                     no Engine on it - then nobody has
-                                     answered and the engineer does. -->
+                                     from. Open where nothing answered -
+                                     no kit, no Engine, or an Engine whose
+                                     own Machine page was never filled in -
+                                     and then the engineer writes it. -->
                                 <field name="machine_model"
-                                       readonly="visit_closed or machine_from_kit"/>
+                                       readonly="visit_closed or machine_model_from_kit"/>
                                 <field name="manufacturer"
-                                       readonly="visit_closed or machine_from_kit"/>
+                                       readonly="visit_closed or manufacturer_from_kit"/>
                                 <!-- off the Agreement, so the engineer can
                                      read the allowance against the counters
                                      beside it without leaving the page -->

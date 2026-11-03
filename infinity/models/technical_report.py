@@ -549,18 +549,26 @@ class TechnicalReport(models.Model):
         string='Manufacturer', compute='_compute_machine_details',
         store=True, readonly=False)
 
-    # Whether the kit answered for the machine, which decides whether the
-    # two above are the engineer's to write. Where a Sales Kit names an
-    # Engine, the model and the make are the product's one answer and the
-    # form closes over them; where there is no kit, or no Engine on it,
-    # nobody has answered and the engineer does.
+    # Whether the machine answered for each of the two above, which is
+    # what decides whether it is the engineer's to write. An answer that
+    # exists is the product's one answer and the form closes over it;
+    # where there is none - no kit, no Engine, or an Engine whose own
+    # Machine page was never filled in - the engineer answers, and the
+    # field stays open.
     #
-    # Assigned on both paths, unlike the two fields above: those are left
-    # alone where there is no answer, so that a recompute does not wipe
-    # what somebody typed, and that is exactly why the flag cannot be read
-    # off whether they are filled in.
-    machine_from_kit = fields.Boolean(
-        string='Machine Answered by the Kit',
+    # One flag each rather than one for both, because an Engine can carry
+    # a model and no make. Closing the empty one beside it would be
+    # closing a question nobody has answered.
+    #
+    # Assigned on every path, unlike the two fields themselves: those are
+    # left alone where there is no answer, so a recompute cannot wipe what
+    # somebody typed - which is exactly why the flags cannot be read off
+    # whether the fields are filled in.
+    machine_model_from_kit = fields.Boolean(
+        string='Machine Model Answered by the Kit',
+        compute='_compute_machine_details', store=True)
+    manufacturer_from_kit = fields.Boolean(
+        string='Manufacturer Answered by the Kit',
         compute='_compute_machine_details', store=True)
 
     def _machine_product(self):
@@ -584,22 +592,30 @@ class TechnicalReport(models.Model):
 
     @api.depends('task_id', 'agreement_sale_order_id', 'machine_serial_number')
     def _compute_machine_details(self):
-        """Answer from the kit's Engine, or leave the answer alone.
+        """Answer from the machine, or leave the answer alone.
 
-        Where the machine is a Sales Kit, the component ticked Engine on
-        its Bill of Materials carries the model and the make. Where it is
-        not, nothing is written - the engineer's own words stay, and a
-        recompute does not wipe them on the way past.
+        The machine is the component ticked Engine on a Sales Kit's Bill
+        of Materials, or a product that is itself ticked Engine on one -
+        see product.product._infinity_machine_product. What it carries is
+        written here and closed; what it does not carry is left exactly as
+        it is, so the engineer's own words stay and a recompute does not
+        wipe them on the way past.
         """
         for record in self:
             product = record._machine_product()
             machine = (product._infinity_machine_product() if product
                        else product)
-            record.machine_from_kit = bool(machine)
-            if not machine:
-                continue
-            record.machine_model = machine.infinity_machine_model or False
-            record.manufacturer = machine.infinity_manufacturer or False
+            # An empty recordset answers False to both, which is the right
+            # answer: nothing has been said about this machine.
+            model = machine.infinity_machine_model or False
+            make = machine.infinity_manufacturer or False
+            record.machine_model_from_kit = bool(model)
+            record.manufacturer_from_kit = bool(make)
+            # Each written only where there is something to write.
+            if model:
+                record.machine_model = model
+            if make:
+                record.manufacturer = make
 
     # All four are read off a meter that does not always land on a whole
     # number, so they are kept to two places rather than rounded on entry.
