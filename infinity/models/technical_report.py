@@ -1,5 +1,6 @@
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
+from odoo.tools import clean_context
 
 
 class TechnicalReport(models.Model):
@@ -727,7 +728,7 @@ class TechnicalReport(models.Model):
         if not partner:
             return False
 
-        order = self.env['sale.order'].create({
+        order = self._infinity_env('sale.order').create({
             'partner_id': partner.id,
             # sale_project's own field. Its view limits the choice to
             # billable projects, but that is a domain on a dropdown, not a
@@ -739,12 +740,12 @@ class TechnicalReport(models.Model):
             'order_line': [
                 (0, 0, {
                     'product_id': line.product_id.id,
-                    # The description written here rather than left to be
-                    # computed. sale.order.line.name is a stored compute
-                    # with readonly=False, so a value given at create is
-                    # the value kept and nothing runs to decorate it - the
-                    # line reads as the product reads, and the words
-                    # 'Technical Report' stay off a customer's quotation.
+                    # The description written out rather than left to be
+                    # computed. It was added in 0.94 against the words
+                    # 'Technical Report' appearing in it, which was in
+                    # fact the default_name leaking in - see _infinity_env,
+                    # where that is now cleared at the source. It is kept
+                    # because it is still the right value and says so.
                     'name': line.product_id
                             .get_product_multiline_description_sale(),
                     # The quantity as the engineer wrote it, including a
@@ -918,7 +919,7 @@ class TechnicalReport(models.Model):
         if project_field and self.task_project_id:
             values[project_field] = self.task_project_id.id
 
-        picking = self.env['stock.picking'].create(values)
+        picking = self._infinity_env('stock.picking').create(values)
         return self._open_picking(picking)
 
     def _open_picking(self, picking):
@@ -931,6 +932,31 @@ class TechnicalReport(models.Model):
             'res_id': picking.id,
             'view_mode': 'form',
         }
+
+    def _infinity_env(self, model):
+        """`model`, free of the default_ values this screen was opened with.
+
+        The actions that open an Agreement and a Technical Report carry a
+        default_name - 'Agreement' and 'Technical Report' - and a button on
+        those forms is called with the same context, which then reaches
+        every create inside it.
+
+        Odoo takes a transfer's reference from the operation type's
+        sequence only when no default_name is in sight:
+
+            if vals.get('name', '/') == '/' and defaults.get('name', '/') == '/'
+
+        so the sequence was never asked, every transfer raised from here
+        was named 'Technical Report', and the second one broke the unique
+        constraint on a reference. The same default named the quotations
+        this screen raised, and the description of every line on them.
+
+        One cause, three symptoms. Cleared here rather than by dropping
+        default_name from the actions, where it is deliberate: a record
+        made from those screens is meant to be named for what it is.
+        """
+        self.ensure_one()
+        return self.env[model].with_context(clean_context(self.env.context))
 
     def _quotation_is_open(self):
         """Whether this report's quotation is still a quotation.
@@ -955,7 +981,7 @@ class TechnicalReport(models.Model):
         partner = self.task_partner_id or self.agreement_partner_id
         if not (lines and partner):
             return
-        order = self.env['sale.order'].create({
+        order = self._infinity_env('sale.order').create({
             'partner_id': partner.id,
             'project_id': self.task_project_id.id or False,
             'origin': self.serial_number or self.task_name or '',
@@ -989,7 +1015,8 @@ class TechnicalReport(models.Model):
             lambda line: line.product_id and line.to_quotation)
         if not lines:
             return
-        self.sale_quotation_id.write({
+        self.sale_quotation_id.with_context(
+                clean_context(self.env.context)).write({
             'order_line': [
                 (0, 0, {
                     'product_id': line.product_id.id,
