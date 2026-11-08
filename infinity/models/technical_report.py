@@ -751,6 +751,15 @@ class TechnicalReport(models.Model):
                     # zero. A quantity nobody asked for is not a detail to
                     # invent on their behalf.
                     'product_uom_qty': line.qty,
+                    # The line this came from. Every other path that
+                    # quotes a part wrote this and the button did not, and
+                    # it is the only thing joining a quotation line back
+                    # to the part that asked for it - so on a quotation
+                    # the button had made, unticking Quote took nothing
+                    # off and changing a quantity reached nothing.
+                    # Matching by product instead would be a guess the
+                    # moment the same product is asked for twice.
+                    'infinity_spare_line_id': line.id,
                 })
                 for line in lines
             ],
