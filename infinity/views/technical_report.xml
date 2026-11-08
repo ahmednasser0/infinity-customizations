@@ -172,6 +172,13 @@
                         <button name="action_set_to_quotation"
                                 string="Set to Quotation" type="object"
                                 class="btn-secondary"/>
+                        <!-- Sends out the parts left unticked on Spare Parts
+                             Requested: material consumed under the contract,
+                             which nobody is billed for and so never reaches
+                             a quotation. -->
+                        <button name="action_deliver_consumed_materials"
+                                string="Deliver Consumed Materials"
+                                type="object" class="btn-secondary"/>
                     </header>
                     <sheet>
                         <!-- An archived record opens looking like any other
@@ -264,6 +271,11 @@
                                 <field name="sale_order_ids" widget="many2many_tags"
                                        readonly="1" string="Sales Orders"
                                        invisible="not sale_order_ids"/>
+                                <!-- and what went out under the contract -->
+                                <field name="delivery_picking_ids"
+                                       widget="many2many_tags" readonly="1"
+                                       string="Material Deliveries"
+                                       invisible="not delivery_picking_ids"/>
                             </group>
                         </group>
                         <!-- readings taken on site, a line per machine -->

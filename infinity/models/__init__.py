@@ -7,6 +7,7 @@ from . import service_contract
 from . import sale_order
 from . import mrp_bom
 from . import stock_move
+from . import stock_picking
 from . import hr_employee
 from . import spare_parts
 from . import account_analytic_line

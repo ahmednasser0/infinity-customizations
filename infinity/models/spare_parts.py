@@ -138,6 +138,9 @@ class SpareLine(models.AbstractModel):
             return value.display_name or _('nothing') if value else _('nothing')
         if field.type == 'selection':
             return dict(field.selection).get(value) or _('nothing')
+        if field.type == 'boolean':
+            # 'Quote: nothing -> True' is not a sentence anybody reads
+            return _('yes') if value else _('no')
         return value if value not in (False, None) else _('nothing')
 
     def unlink(self):
@@ -157,7 +160,9 @@ class SpareRequested(models.Model):
     _inherit = ['infinity.spare.line.mixin']
     _description = 'Technical Report Spare Part Requested'
     _infinity_section = 'Spare Parts Requested'
-    _infinity_logged = ('product_id', 'qty')
+    # to_quotation is logged with the rest: which of the two ways a part
+    # goes out is the sort of change somebody has to answer for afterwards.
+    _infinity_logged = ('product_id', 'qty', 'to_quotation')
 
     # The quotation is meant to be what this report is asking for, so it
     # keeps up: a part added goes onto it, a part edited is edited on it, a
@@ -178,19 +183,32 @@ class SpareRequested(models.Model):
 
     def _infinity_after_add(self, lines):
         for report, added in self._infinity_by_report(lines).items():
+            wanted = added.filtered('to_quotation')
+            if not wanted:
+                # all consumed under the contract: they leave on a
+                # transfer, and the button raises it
+                continue
             if not report.sale_quotation_id:
                 # nothing quoted yet - the button makes the first one
                 continue
             if report._quotation_is_open():
-                report._infinity_quote_lines(added)
+                report._infinity_quote_lines(wanted)
             else:
                 # the last one has been confirmed, so these are quoted by
                 # themselves rather than squeezed into an agreed order
-                report._infinity_quote_new(added)
+                report._infinity_quote_new(wanted)
 
     def _infinity_after_change(self, lines):
+        """Carry the change to the quotation, in both directions.
+
+        Unticking Quote is as much a change as changing the quantity: the
+        part stops being something the customer is being asked to pay for,
+        so it comes off the quotation. Ticking it back puts it on again.
+        """
         for report, changed in self._infinity_by_report(lines).items():
-            report._infinity_requote_lines(changed)
+            report._infinity_requote_lines(changed.filtered('to_quotation'))
+            report._infinity_unquote_lines(
+                changed.filtered(lambda line: not line.to_quotation))
 
     def _infinity_before_remove(self, lines):
         for report, going in self._infinity_by_report(lines).items():
@@ -213,6 +231,20 @@ class SpareRequested(models.Model):
     uom_id = fields.Many2one(
         related='product_id.uom_id', string='Unit', readonly=True)
     qty = fields.Float(string='Qty')
+
+    # Which of the two ways this part goes out. Ticked, it is charged for
+    # and goes on the quotation. Unticked, it is material consumed under
+    # the contract: nobody is billed and it leaves on a transfer instead,
+    # through Deliver Consumed Materials.
+    #
+    # Ticked by default, because that is what every line did before this
+    # existed and a part nobody has said anything about is a part being
+    # asked for.
+    to_quotation = fields.Boolean(
+        string='Quote', default=True,
+        help='Ticked: this part goes on the quotation. Unticked: it is '
+             'consumed under the contract and goes out on a transfer, '
+             'through Deliver Consumed Materials.')
 
     @api.depends('product_id')
     def _compute_display_name(self):

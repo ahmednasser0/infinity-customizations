@@ -12,10 +12,14 @@
                      need and the quantity takes the strip it needs and no
                      more. -->
                 <list editable="bottom">
-                    <field name="product_id" width="30%"/>
-                    <field name="description" readonly="1" width="38%"/>
-                    <field name="uom_id" readonly="1" width="14%"/>
-                    <field name="qty" width="18%"/>
+                    <field name="product_id" width="26%"/>
+                    <field name="description" readonly="1" width="32%"/>
+                    <field name="uom_id" readonly="1" width="12%"/>
+                    <field name="qty" width="16%"/>
+                    <!-- Ticked, the part is charged for and goes on the
+                         quotation. Unticked, it is consumed under the
+                         contract and goes out on a transfer instead. -->
+                    <field name="to_quotation" width="14%"/>
                 </list>
             </field>
         </record>
@@ -34,6 +38,7 @@
                             <group>
                                 <field name="uom_id" readonly="1"/>
                                 <field name="qty"/>
+                                <field name="to_quotation"/>
                             </group>
                         </group>
                     </sheet>

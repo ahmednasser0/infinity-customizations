@@ -718,7 +718,8 @@ class TechnicalReport(models.Model):
         if self.sale_quotation_id and self._quotation_is_open():
             return self._open_quotation()
 
-        lines = self.spare_requested_ids.filtered('product_id')
+        lines = self.spare_requested_ids.filtered(
+            lambda line: line.product_id and line.to_quotation)
         if not lines:
             return False
 
@@ -757,6 +758,171 @@ class TechnicalReport(models.Model):
         self.sale_quotation_id = order
         return self._open_quotation()
 
+
+    # --- The parts consumed under the contract, sent out --------------------
+    # Looked up by name and never by id: a staging database and a live one
+    # number their records differently, and an id written here would send
+    # stock out of whatever happened to carry that number.
+    _CONSUMPTION_PICKING_TYPE = 'Contract Material Consumption'
+    _CONSUMPTION_WAREHOUSE = 'Konica Minolta Main'
+    _CONSUMPTION_SOURCE_LOCATION = 'KM-WH/STOCK'
+
+    delivery_picking_ids = fields.One2many(
+        'stock.picking', 'infinity_technical_report_id',
+        string='Material Deliveries', readonly=True)
+
+    def _consumed_lines(self):
+        """The requested parts that are consumed rather than charged for.
+
+        The unticked ones, less any that have already gone out. A move that
+        was cancelled does not count as gone, so those come back into the
+        list; a part is matched by the line it came from rather than by its
+        product, which is a guess the moment the same product is asked for
+        twice.
+        """
+        self.ensure_one()
+        lines = self.spare_requested_ids.filtered(
+            lambda line: line.product_id and not line.to_quotation)
+        if not lines:
+            return lines
+        gone = self.env['stock.move'].search([
+            ('infinity_spare_line_id', 'in', lines.ids),
+            ('state', '!=', 'cancel'),
+        ]).infinity_spare_line_id
+        return lines - gone
+
+    def _consumption_picking_type(self):
+        """The operation type these transfers are raised under."""
+        self.ensure_one()
+        PickingType = self.env['stock.picking.type']
+        found = PickingType.search(
+            [('name', '=', self._CONSUMPTION_PICKING_TYPE)])
+        if len(found) > 1:
+            # more than one warehouse runs an operation of this name
+            narrowed = found.filtered(
+                lambda kind:
+                kind.warehouse_id.name == self._CONSUMPTION_WAREHOUSE)
+            found = narrowed or found
+        if not found:
+            raise UserError(_(
+                'There is no operation type called "%(warehouse)s: '
+                '%(kind)s". Create it in Inventory, or tell us what it is '
+                'called here, and the consumed parts can go out under it.',
+                warehouse=self._CONSUMPTION_WAREHOUSE,
+                kind=self._CONSUMPTION_PICKING_TYPE))
+        return found[:1]
+
+    def _consumption_source_location(self):
+        """The stock these parts leave from, or nothing if it is not there.
+
+        Nothing is not an error: the operation type carries a source of its
+        own, and that is used instead rather than refusing to send
+        anything out.
+        """
+        self.ensure_one()
+        return self.env['stock.location'].search(
+            [('complete_name', '=', self._CONSUMPTION_SOURCE_LOCATION)],
+            limit=1)
+
+    def _picking_project_field(self):
+        """The field on a transfer that names a project, where there is one.
+
+        Odoo's own stock.picking has none - this is a field somebody added,
+        in Studio or in a module of their own - so it is looked for by what
+        it points at rather than by a name guessed here. project_id is
+        preferred where it exists, since that is what such a field is
+        almost always called.
+        """
+        fields_of = self.env['stock.picking']._fields
+
+        def names_a_project(name):
+            field = fields_of.get(name)
+            return bool(field and field.type == 'many2one'
+                        and field.comodel_name == 'project.project')
+
+        if names_a_project('project_id'):
+            return 'project_id'
+        for name in fields_of:
+            if names_a_project(name):
+                return name
+        return None
+
+    def action_deliver_consumed_materials(self):
+        """Send out the parts that are consumed under the contract.
+
+        The ones left unticked on Spare Parts Requested: nobody is billed
+        for them, so they never reach a quotation and leave on a transfer
+        instead.
+
+        A transfer already raised and still a draft is opened rather than a
+        second one made - somebody pressing twice is asking "did that
+        work?", not asking for the parts again. Once it has been validated
+        the parts have gone, and anything asked for since goes out on a
+        transfer of its own.
+        """
+        self.ensure_one()
+        waiting = self.delivery_picking_ids.filtered(
+            lambda picking: picking.state == 'draft')[:1]
+        if waiting:
+            return self._open_picking(waiting)
+
+        lines = self._consumed_lines()
+        if not lines:
+            return False
+        partner = self.task_partner_id or self.agreement_partner_id
+        if not partner:
+            return False
+
+        picking_type = self._consumption_picking_type()
+        source = (self._consumption_source_location()
+                  or picking_type.default_location_src_id)
+        destination = (picking_type.default_location_dest_id
+                       or partner.property_stock_customer)
+        if not (source and destination):
+            raise UserError(_(
+                'The operation type "%(kind)s" has no source or destination '
+                'location set, and "%(location)s" was not found either. '
+                'Stock cannot be moved without both.',
+                kind=picking_type.display_name,
+                location=self._CONSUMPTION_SOURCE_LOCATION))
+
+        values = {
+            'partner_id': partner.id,
+            'picking_type_id': picking_type.id,
+            'location_id': source.id,
+            'location_dest_id': destination.id,
+            'origin': self.serial_number or self.task_name or '',
+            'infinity_technical_report_id': self.id,
+            'move_ids': [
+                (0, 0, {
+                    'product_id': line.product_id.id,
+                    'product_uom_qty': line.qty,
+                    'product_uom': line.product_id.uom_id.id,
+                    'location_id': source.id,
+                    'location_dest_id': destination.id,
+                    'infinity_spare_line_id': line.id,
+                })
+                for line in lines
+            ],
+        }
+        project_field = self._picking_project_field()
+        if project_field and self.task_project_id:
+            values[project_field] = self.task_project_id.id
+
+        picking = self.env['stock.picking'].create(values)
+        return self._open_picking(picking)
+
+    def _open_picking(self, picking):
+        """Show a transfer, the way the quotation is shown."""
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': picking.display_name,
+            'res_model': 'stock.picking',
+            'res_id': picking.id,
+            'view_mode': 'form',
+        }
+
     def _quotation_is_open(self):
         """Whether this report's quotation is still a quotation.
 
@@ -775,7 +941,8 @@ class TechnicalReport(models.Model):
         so what was asked for since is quoted by itself.
         """
         self.ensure_one()
-        lines = lines.filtered('product_id')
+        lines = lines.filtered(
+            lambda line: line.product_id and line.to_quotation)
         partner = self.task_partner_id or self.agreement_partner_id
         if not (lines and partner):
             return
@@ -809,7 +976,8 @@ class TechnicalReport(models.Model):
         self.ensure_one()
         if not (self.sale_quotation_id and self._quotation_is_open()):
             return
-        lines = lines.filtered('product_id')
+        lines = lines.filtered(
+            lambda line: line.product_id and line.to_quotation)
         if not lines:
             return
         self.sale_quotation_id.write({

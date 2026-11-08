@@ -8,6 +8,15 @@ _OPEN = ('draft', 'waiting', 'confirmed', 'partially_available', 'assigned')
 class StockMove(models.Model):
     _inherit = 'stock.move'
 
+    # The requested spare part this move sends out, where it was raised from
+    # a Technical Report. Matching back by product would be a guess the
+    # moment the same product is asked for twice, and it is what stops a
+    # part going out a second time on the next press of the button.
+    infinity_spare_line_id = fields.Many2one(
+        'infinity.technical.report.spare.requested',
+        string='Requested Spare Part', ondelete='set null',
+        index='btree_not_null', copy=False)
+
     # True once the machine this move is part of has gone out on any of the
     # transfers the order raised. A delivery in several steps - pick, then
     # quality control, then ship - is one machine leaving, not three, so
