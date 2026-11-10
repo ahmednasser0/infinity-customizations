@@ -237,7 +237,7 @@ class SpareRequested(models.Model):
     # Which of the two ways this part goes out. Ticked, it is charged for
     # and goes on the quotation. Unticked, it is material consumed under
     # the contract: nobody is billed and it leaves on a transfer instead,
-    # through Deliver Consumed Materials.
+    # through Issue Contract Materials.
     #
     # Ticked by default, because that is what every line did before this
     # existed and a part nobody has said anything about is a part being
@@ -246,7 +246,7 @@ class SpareRequested(models.Model):
         string='Quote', default=True,
         help='Ticked: this part goes on the quotation. Unticked: it is '
              'consumed under the contract and goes out on a transfer, '
-             'through Deliver Consumed Materials.')
+             'through Issue Contract Materials.')
 
     @api.depends('product_id')
     def _compute_display_name(self):

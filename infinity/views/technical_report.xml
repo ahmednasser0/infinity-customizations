@@ -177,7 +177,7 @@
                              which nobody is billed for and so never reaches
                              a quotation. -->
                         <button name="action_deliver_consumed_materials"
-                                string="Deliver Consumed Materials"
+                                string="Issue Contract Materials"
                                 type="object" class="btn-secondary"/>
                     </header>
                     <sheet>

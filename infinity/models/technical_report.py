@@ -816,9 +816,9 @@ class TechnicalReport(models.Model):
         picking_type = company.infinity_consumption_picking_type_id
         if not picking_type:
             raise UserError(_(
-                'No operation type has been chosen for consumed materials '
+                'No operation type has been chosen for contract materials '
                 'in %(company)s. Choose one in Inventory > Configuration > '
-                'Settings, under Operations: "Consumed Materials Operation '
+                'Settings, under Operations: "Contract Materials Operation '
                 'Type".',
                 company=company.display_name))
         return picking_type

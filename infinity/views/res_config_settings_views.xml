@@ -2,7 +2,7 @@
 <odoo>
     <data>
 
-        <!-- Which operation type Deliver Consumed Materials uses, chosen in
+        <!-- Which operation type Issue Contract Materials uses, chosen in
              the Inventory settings beside Odoo's own Operations choices.
 
              Limited to the operation types of the company being set up:
@@ -17,8 +17,8 @@
                 <xpath expr="//block[@name='operations_setting_container']" position="inside">
                     <setting id="infinity_consumption_picking_type"
                              company_dependent="1"
-                             string="Consumed Materials Operation Type"
-                             help="The operation type Deliver Consumed Materials raises its transfers under, on a Technical Report. The transfer leaves from that operation type's own source location.">
+                             string="Contract Materials Operation Type"
+                             help="The operation type Issue Contract Materials raises its transfers under, on a Technical Report. The transfer leaves from that operation type's own source location.">
                         <field name="infinity_consumption_picking_type_id"
                                domain="[('company_id', '=', company_id)]"
                                options="{'no_create': True}"/>
