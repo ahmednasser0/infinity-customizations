@@ -187,17 +187,11 @@ class SpareRequested(models.Model):
             # The consumed ones join the transfer still waiting to go out,
             # where there is one. Where there is not, the button raises it.
             report._infinity_deliver_lines(added - wanted)
-            if not wanted:
-                continue
-            if not report.sale_quotation_id:
-                # nothing quoted yet - the button makes the first one
-                continue
-            if report._quotation_is_open():
-                report._infinity_quote_lines(wanted)
-            else:
-                # the last one has been confirmed, so these are quoted by
-                # themselves rather than squeezed into an agreed order
-                report._infinity_quote_new(wanted)
+            # And the charged ones join the open quotation - or, where the
+            # last one has been confirmed, are quoted by themselves rather
+            # than squeezed into an agreed order. Nothing quoted yet, and
+            # the button makes the first one.
+            report._infinity_quote_pending(wanted)
 
     def _infinity_after_change(self, lines):
         """Carry the change to the quotation and to the transfer.

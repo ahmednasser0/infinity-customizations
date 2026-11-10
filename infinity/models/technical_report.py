@@ -719,10 +719,13 @@ class TechnicalReport(models.Model):
         if self.sale_quotation_id and self._quotation_is_open():
             return self._open_quotation()
 
-        lines = self.spare_requested_ids.filtered(
-            lambda line: line.product_id and line.to_quotation)
+        # Only what is not on an order already. This used to take every
+        # ticked line, so pressing the button after a quotation had been
+        # confirmed quoted the whole of that order over again.
+        lines = self._quotable_lines()
         if not lines:
-            return False
+            # nothing new to quote: show the last one rather than nothing
+            return self._open_quotation() if self.sale_quotation_id else False
 
         partner = self.task_partner_id or self.agreement_partner_id
         if not partner:
@@ -888,10 +891,23 @@ class TechnicalReport(models.Model):
 
         lines = self._consumed_lines()
         if not lines:
-            return False
+            # nothing new to send: show the last one rather than nothing
+            latest = self.delivery_picking_ids.sorted('id')[-1:]
+            return self._open_picking(latest) if latest else False
+        picking = self._infinity_new_delivery(lines)
+        return self._open_picking(picking) if picking else False
+
+    def _infinity_new_delivery(self, lines):
+        """Raise a transfer of its own for these consumed parts.
+
+        The first one, from the button, and each one after a transfer has
+        been validated: that one is stock that has left and takes nothing
+        more, so what is asked for since goes out by itself.
+        """
+        self.ensure_one()
         partner = self.task_partner_id or self.agreement_partner_id
-        if not partner:
-            return False
+        if not (lines and partner):
+            return self.env['stock.picking']
 
         picking_type = self._consumption_picking_type()
         source = (self._consumption_source_location()
@@ -929,8 +945,7 @@ class TechnicalReport(models.Model):
         if project_field and self.task_project_id:
             values[project_field] = self.task_project_id.id
 
-        picking = self._infinity_env('stock.picking').create(values)
-        return self._open_picking(picking)
+        return self._infinity_env('stock.picking').create(values)
 
     # --- Keeping the transfer in step with the lines -----------------------
     # The transfer is meant to be what this report is sending out, so it
@@ -944,7 +959,8 @@ class TechnicalReport(models.Model):
         """This report's transfers that have not gone out yet."""
         self.ensure_one()
         return self.delivery_picking_ids.filtered(
-            lambda picking: picking.state not in ('done', 'cancel'))
+            lambda picking: picking.state not in ('done', 'cancel')
+        ).sorted('id')
 
     def _infinity_delivery_moves(self, lines):
         """The moves, on transfers still open, that send these parts out."""
@@ -993,19 +1009,23 @@ class TechnicalReport(models.Model):
     def _infinity_deliver_lines(self, lines):
         """Put these consumed parts on the transfer waiting to go out.
 
-        Nothing happens where there is none: the first is raised by the
-        button, and after one has been validated the next is too.
+        Where every transfer so far has been validated, or cancelled, a
+        new one is raised for them: a transfer that has gone out takes
+        nothing more. Where none has ever been raised nothing happens - the
+        first is the button's, the way the first quotation is.
         """
         self.ensure_one()
-        picking = self._open_deliveries()[-1:]
-        if not picking:
-            return
         # less the ones already on a transfer - one that went out on an
         # earlier transfer is not sent a second time on this one
         lines = self._consumed_lines(lines)
-        if lines:
+        if not lines:
+            return
+        picking = self._open_deliveries()[-1:]
+        if picking:
             self._infinity_add_moves(
                 picking, lines, confirm=picking.state != 'draft')
+        elif self.delivery_picking_ids:
+            self._infinity_new_delivery(lines)
 
     def _infinity_redeliver_lines(self, lines):
         """Carry a change to these consumed parts onto the open transfer.
@@ -1089,6 +1109,45 @@ class TechnicalReport(models.Model):
         self.ensure_one()
         return self.sale_quotation_id.state in ('draft', 'sent')
 
+    def _quotable_lines(self, lines=None):
+        """The requested parts that are charged for and still to be quoted.
+
+        The ticked ones - of `lines`, or of the whole report - less any
+        already on an order of this report's that still stands, quotation
+        or confirmed. Matched by the line a quotation line came from, not
+        by product. A cancelled order does not count, so its parts come
+        back into the list.
+        """
+        self.ensure_one()
+        if lines is None:
+            lines = self.spare_requested_ids
+        lines = lines.filtered(
+            lambda line: line.product_id and line.to_quotation)
+        if not lines:
+            return lines
+        taken = self.env['sale.order.line'].search([
+            ('infinity_spare_line_id', 'in', lines.ids),
+            ('order_id.state', '!=', 'cancel'),
+        ]).infinity_spare_line_id
+        return lines - taken
+
+    def _infinity_quote_pending(self, lines):
+        """Quote whichever of these parts no order carries yet.
+
+        Onto the open quotation where there is one. Where the last one has
+        been confirmed - or cancelled - on a quotation of their own: an
+        order somebody agreed to takes nothing more. Where nothing has ever
+        been quoted nothing happens, and the button makes the first.
+        """
+        self.ensure_one()
+        lines = self._quotable_lines(lines)
+        if not (lines and self.sale_quotation_id):
+            return
+        if self._quotation_is_open():
+            self._infinity_quote_lines(lines)
+        else:
+            self._infinity_quote_new(lines)
+
     def _infinity_quote_new(self, lines):
         """Quote these parts on a quotation of their own.
 
@@ -1160,16 +1219,22 @@ class TechnicalReport(models.Model):
             lambda order_line: order_line.infinity_spare_line_id in lines)
 
     def _infinity_requote_lines(self, lines):
-        """Carry a change to these parts onto the open quotation."""
+        """Carry a change to these parts onto the quotation.
+
+        A part on the open quotation is edited there. A part on an order
+        that has been confirmed is left exactly as it was agreed - the
+        change stops at the report. And a part on no order at all, ticked
+        Quote after the last quotation was confirmed, say, is quoted the
+        way a newly added one is.
+        """
         self.ensure_one()
-        if not (self.sale_quotation_id and self._quotation_is_open()):
-            return
-        for line in lines:
-            quoted = self._infinity_quoted_lines(line)
+        is_open = bool(self.sale_quotation_id) and self._quotation_is_open()
+        pending = lines.browse()
+        for line in lines.filtered(
+                lambda line: line.product_id and line.to_quotation):
+            quoted = self._infinity_quoted_lines(line) if is_open else None
             if not quoted:
-                # asked for after the quotation was made, or asked for
-                # again after being withdrawn
-                self._infinity_quote_lines(line)
+                pending |= line
                 continue
             quoted.write({
                 'product_id': line.product_id.id,
@@ -1177,6 +1242,7 @@ class TechnicalReport(models.Model):
                         .get_product_multiline_description_sale(),
                 'product_uom_qty': line.qty,
             })
+        self._infinity_quote_pending(pending)
 
     def _infinity_unquote_lines(self, lines):
         """Take these parts off the open quotation.
