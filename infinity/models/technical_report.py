@@ -773,13 +773,6 @@ class TechnicalReport(models.Model):
 
 
     # --- The parts consumed under the contract, sent out --------------------
-    # Looked up by name and never by id: a staging database and a live one
-    # number their records differently, and an id written here would send
-    # stock out of whatever happened to carry that number.
-    _CONSUMPTION_PICKING_TYPE = 'Contract Material Consumption'
-    _CONSUMPTION_WAREHOUSE = 'Konica Minolta Main'
-    _CONSUMPTION_SOURCE_LOCATION = 'KM-WH/STOCK'
-
     delivery_picking_ids = fields.One2many(
         'stock.picking', 'infinity_technical_report_id',
         string='Material Deliveries', readonly=True)
@@ -808,37 +801,27 @@ class TechnicalReport(models.Model):
         return lines - gone
 
     def _consumption_picking_type(self):
-        """The operation type these transfers are raised under."""
-        self.ensure_one()
-        PickingType = self.env['stock.picking.type']
-        found = PickingType.search(
-            [('name', '=', self._CONSUMPTION_PICKING_TYPE)])
-        if len(found) > 1:
-            # more than one warehouse runs an operation of this name
-            narrowed = found.filtered(
-                lambda kind:
-                kind.warehouse_id.name == self._CONSUMPTION_WAREHOUSE)
-            found = narrowed or found
-        if not found:
-            raise UserError(_(
-                'There is no operation type called "%(warehouse)s: '
-                '%(kind)s". Create it in Inventory, or tell us what it is '
-                'called here, and the consumed parts can go out under it.',
-                warehouse=self._CONSUMPTION_WAREHOUSE,
-                kind=self._CONSUMPTION_PICKING_TYPE))
-        return found[:1]
+        """The operation type these transfers are raised under.
 
-    def _consumption_source_location(self):
-        """The stock these parts leave from, or nothing if it is not there.
+        The one chosen for the company in the Inventory settings. It used
+        to be found by a name written here, so it could only ever be the
+        one operation type, and renaming that broke the button.
 
-        Nothing is not an error: the operation type carries a source of its
-        own, and that is used instead rather than refusing to send
-        anything out.
+        The company is the task's, not whoever is pressing: a user working
+        across companies sends the stock out of the company the visit
+        belongs to.
         """
         self.ensure_one()
-        return self.env['stock.location'].search(
-            [('complete_name', '=', self._CONSUMPTION_SOURCE_LOCATION)],
-            limit=1)
+        company = self.task_id.company_id or self.env.company
+        picking_type = company.infinity_consumption_picking_type_id
+        if not picking_type:
+            raise UserError(_(
+                'No operation type has been chosen for consumed materials '
+                'in %(company)s. Choose one in Inventory > Configuration > '
+                'Settings, under Operations: "Consumed Materials Operation '
+                'Type".',
+                company=company.display_name))
+        return picking_type
 
     def _picking_project_field(self):
         """The field on a transfer that names a project, where there is one.
@@ -910,17 +893,19 @@ class TechnicalReport(models.Model):
             return self.env['stock.picking']
 
         picking_type = self._consumption_picking_type()
-        source = (self._consumption_source_location()
-                  or picking_type.default_location_src_id)
+        # Where the stock leaves from is the operation type's to say. A
+        # source written here would be right for one operation type and
+        # wrong for every other that could now be chosen - another
+        # warehouse's, sending out of this one's shelves.
+        source = picking_type.default_location_src_id
         destination = (picking_type.default_location_dest_id
                        or partner.property_stock_customer)
         if not (source and destination):
             raise UserError(_(
-                'The operation type "%(kind)s" has no source or destination '
-                'location set, and "%(location)s" was not found either. '
-                'Stock cannot be moved without both.',
-                kind=picking_type.display_name,
-                location=self._CONSUMPTION_SOURCE_LOCATION))
+                'The operation type "%(kind)s" has no default source or '
+                'destination location. Set them on the operation type: '
+                'stock cannot be moved without both.',
+                kind=picking_type.display_name))
 
         values = {
             'partner_id': partner.id,

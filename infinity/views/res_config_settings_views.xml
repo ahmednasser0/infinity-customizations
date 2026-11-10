@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <!-- Which operation type Deliver Consumed Materials uses, chosen in
+             the Inventory settings beside Odoo's own Operations choices.
+
+             Limited to the operation types of the company being set up:
+             the Settings page is one company's at a time, and offering it
+             another company's operation type is offering it stock that is
+             not its to move. -->
+        <record id="infinity_res_config_settings_view_form" model="ir.ui.view">
+            <field name="name">res.config.settings.form.infinity.consumption</field>
+            <field name="model">res.config.settings</field>
+            <field name="inherit_id" ref="stock.res_config_settings_view_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//block[@name='operations_setting_container']" position="inside">
+                    <setting id="infinity_consumption_picking_type"
+                             company_dependent="1"
+                             string="Consumed Materials Operation Type"
+                             help="The operation type Deliver Consumed Materials raises its transfers under, on a Technical Report. The transfer leaves from that operation type's own source location.">
+                        <field name="infinity_consumption_picking_type_id"
+                               domain="[('company_id', '=', company_id)]"
+                               options="{'no_create': True}"/>
+                    </setting>
+                </xpath>
+            </field>
+        </record>
+
+    </data>
+</odoo>
