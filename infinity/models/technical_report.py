@@ -781,17 +781,20 @@ class TechnicalReport(models.Model):
         'stock.picking', 'infinity_technical_report_id',
         string='Material Deliveries', readonly=True)
 
-    def _consumed_lines(self):
-        """The requested parts that are consumed rather than charged for.
+    def _consumed_lines(self, lines=None):
+        """The requested parts that are consumed and still to be sent.
 
-        The unticked ones, less any that have already gone out. A move that
-        was cancelled does not count as gone, so those come back into the
-        list; a part is matched by the line it came from rather than by its
+        The unticked ones - of `lines`, or of the whole report - less any
+        that are already on a transfer, gone out or waiting to. A move that
+        was cancelled does not count, so those come back into the list; a
+        part is matched by the line it came from rather than by its
         product, which is a guess the moment the same product is asked for
         twice.
         """
         self.ensure_one()
-        lines = self.spare_requested_ids.filtered(
+        if lines is None:
+            lines = self.spare_requested_ids
+        lines = lines.filtered(
             lambda line: line.product_id and not line.to_quotation)
         if not lines:
             return lines
@@ -864,16 +867,23 @@ class TechnicalReport(models.Model):
         for them, so they never reach a quotation and leave on a transfer
         instead.
 
-        A transfer already raised and still a draft is opened rather than a
-        second one made - somebody pressing twice is asking "did that
-        work?", not asking for the parts again. Once it has been validated
-        the parts have gone, and anything asked for since goes out on a
-        transfer of its own.
+        A transfer already raised and not yet gone out is opened rather
+        than a second one made - somebody pressing twice is asking "did
+        that work?", not asking for the parts again. It is kept in step
+        with the lines in the meantime, see _infinity_redeliver_lines.
+        Once it has been validated the parts have gone, and anything asked
+        for since goes out on a transfer of its own.
         """
         self.ensure_one()
-        waiting = self.delivery_picking_ids.filtered(
-            lambda picking: picking.state == 'draft')[:1]
+        waiting = self._open_deliveries()[-1:]
         if waiting:
+            # Brought up to date before it is shown. The lines keep it in
+            # step as they are saved, but a transfer raised before they
+            # learnt to - or a line that slipped past - is put right here
+            # rather than opened looking like something else was asked for.
+            self._infinity_undeliver_lines(
+                self.spare_requested_ids.filtered('to_quotation'))
+            self._infinity_redeliver_lines(self.spare_requested_ids)
             return self._open_picking(waiting)
 
         lines = self._consumed_lines()
@@ -921,6 +931,117 @@ class TechnicalReport(models.Model):
 
         picking = self._infinity_env('stock.picking').create(values)
         return self._open_picking(picking)
+
+    # --- Keeping the transfer in step with the lines -----------------------
+    # The transfer is meant to be what this report is sending out, so it
+    # keeps up the way the quotation does: a consumed part added goes onto
+    # it, one edited is edited on it, one withdrawn - or ticked Quote -
+    # comes off it. All of it stops at the same line the quotation's does.
+    # A transfer that has been validated is stock that has left, and a
+    # report does not reach into that; what went out went out.
+
+    def _open_deliveries(self):
+        """This report's transfers that have not gone out yet."""
+        self.ensure_one()
+        return self.delivery_picking_ids.filtered(
+            lambda picking: picking.state not in ('done', 'cancel'))
+
+    def _infinity_delivery_moves(self, lines):
+        """The moves, on transfers still open, that send these parts out."""
+        self.ensure_one()
+        if not lines:
+            return self.env['stock.move']
+        return self._open_deliveries().move_ids.filtered(
+            lambda move: move.infinity_spare_line_id in lines
+            and move.state not in ('done', 'cancel'))
+
+    def _infinity_add_moves(self, picking, lines, confirm):
+        """Put a move for each of these parts on this transfer.
+
+        `confirm` says whether the transfer had already been marked to do,
+        and it is asked for rather than read here: taking the old move off
+        first can leave the transfer with nothing on it, which reads as a
+        draft again by the time this runs.
+        """
+        self.ensure_one()
+        self._infinity_env('stock.move').create([{
+            'product_id': line.product_id.id,
+            'product_uom_qty': line.qty,
+            'product_uom': line.product_id.uom_id.id,
+            'location_id': picking.location_id.id,
+            'location_dest_id': picking.location_dest_id.id,
+            'picking_id': picking.id,
+            'infinity_spare_line_id': line.id,
+        } for line in lines])
+        if confirm:
+            # Somebody has already marked the transfer to do. A move added
+            # after that arrives as a draft inside it and would sit there
+            # unreserved; confirming picks up exactly the draft ones.
+            picking.action_confirm()
+
+    def _infinity_drop_moves(self, moves):
+        """Take these moves off a transfer that has not gone out.
+
+        Cancelled first where the transfer was already under way, which
+        lets go of whatever stock had been reserved for them.
+        """
+        under_way = moves.filtered(lambda move: move.state != 'draft')
+        if under_way:
+            under_way._action_cancel()
+        moves.unlink()
+
+    def _infinity_deliver_lines(self, lines):
+        """Put these consumed parts on the transfer waiting to go out.
+
+        Nothing happens where there is none: the first is raised by the
+        button, and after one has been validated the next is too.
+        """
+        self.ensure_one()
+        picking = self._open_deliveries()[-1:]
+        if not picking:
+            return
+        # less the ones already on a transfer - one that went out on an
+        # earlier transfer is not sent a second time on this one
+        lines = self._consumed_lines(lines)
+        if lines:
+            self._infinity_add_moves(
+                picking, lines, confirm=picking.state != 'draft')
+
+    def _infinity_redeliver_lines(self, lines):
+        """Carry a change to these consumed parts onto the open transfer.
+
+        A new quantity is written onto the move. A new product replaces
+        it: a move that has been marked to do holds a reservation of the
+        old product, and rewriting the product underneath that leaves the
+        reservation describing stock nobody is sending.
+        """
+        self.ensure_one()
+        for line in lines.filtered(
+                lambda line: line.product_id and not line.to_quotation):
+            moves = self._infinity_delivery_moves(line)
+            if not moves:
+                # asked for after the transfer was raised, or unticked
+                # after being quoted
+                self._infinity_deliver_lines(line)
+                continue
+            if len(moves) == 1 and moves.product_id == line.product_id:
+                moves.product_uom_qty = line.qty
+                continue
+            picking = moves[:1].picking_id
+            under_way = picking.state != 'draft'
+            self._infinity_drop_moves(moves)
+            self._infinity_add_moves(picking, line, confirm=under_way)
+
+    def _infinity_undeliver_lines(self, lines):
+        """Take these parts off the open transfer.
+
+        For a part withdrawn, and for one ticked Quote after all: it is
+        being charged for now and belongs on the quotation instead.
+        """
+        self.ensure_one()
+        moves = self._infinity_delivery_moves(lines)
+        if moves:
+            self._infinity_drop_moves(moves)
 
     def _open_picking(self, picking):
         """Show a transfer, the way the quotation is shown."""

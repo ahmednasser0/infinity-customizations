@@ -184,9 +184,10 @@ class SpareRequested(models.Model):
     def _infinity_after_add(self, lines):
         for report, added in self._infinity_by_report(lines).items():
             wanted = added.filtered('to_quotation')
+            # The consumed ones join the transfer still waiting to go out,
+            # where there is one. Where there is not, the button raises it.
+            report._infinity_deliver_lines(added - wanted)
             if not wanted:
-                # all consumed under the contract: they leave on a
-                # transfer, and the button raises it
                 continue
             if not report.sale_quotation_id:
                 # nothing quoted yet - the button makes the first one
@@ -199,20 +200,27 @@ class SpareRequested(models.Model):
                 report._infinity_quote_new(wanted)
 
     def _infinity_after_change(self, lines):
-        """Carry the change to the quotation, in both directions.
+        """Carry the change to the quotation and to the transfer.
 
-        Unticking Quote is as much a change as changing the quantity: the
-        part stops being something the customer is being asked to pay for,
-        so it comes off the quotation. Ticking it back puts it on again.
+        A part is on one or the other, and Quote says which, so a change
+        to a line is told to both: the side the part is on takes the new
+        product and quantity, and the side it is not on lets go of it.
+        That covers the tick moving as well - unticking Quote takes the
+        part off the quotation and puts it on the transfer, and ticking it
+        does the reverse.
         """
         for report, changed in self._infinity_by_report(lines).items():
-            report._infinity_requote_lines(changed.filtered('to_quotation'))
-            report._infinity_unquote_lines(
-                changed.filtered(lambda line: not line.to_quotation))
+            quoted = changed.filtered('to_quotation')
+            consumed = changed - quoted
+            report._infinity_requote_lines(quoted)
+            report._infinity_undeliver_lines(quoted)
+            report._infinity_unquote_lines(consumed)
+            report._infinity_redeliver_lines(consumed)
 
     def _infinity_before_remove(self, lines):
         for report, going in self._infinity_by_report(lines).items():
             report._infinity_unquote_lines(going)
+            report._infinity_undeliver_lines(going)
     _order = 'report_id, id'
 
     report_id = fields.Many2one(
