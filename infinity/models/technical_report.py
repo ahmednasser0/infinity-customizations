@@ -1000,6 +1000,9 @@ class TechnicalReport(models.Model):
         first is the button's, the way the first quotation is.
         """
         self.ensure_one()
+        if not self.delivery_picking_ids:
+            # nothing issued yet: the first transfer is the button's
+            return
         # less the ones already on a transfer - one that went out on an
         # earlier transfer is not sent a second time on this one
         lines = self._consumed_lines(lines)
@@ -1125,8 +1128,12 @@ class TechnicalReport(models.Model):
         been quoted nothing happens, and the button makes the first.
         """
         self.ensure_one()
+        # Nothing quoted yet is answered without searching the order lines:
+        # this runs on every part added, by people who may not read sales.
+        if not self.sale_quotation_id:
+            return
         lines = self._quotable_lines(lines)
-        if not (lines and self.sale_quotation_id):
+        if not lines:
             return
         if self._quotation_is_open():
             self._infinity_quote_lines(lines)
@@ -1207,10 +1214,11 @@ class TechnicalReport(models.Model):
         """Carry a change to these parts onto the quotation.
 
         A part on the open quotation is edited there. A part on an order
-        that has been confirmed is left exactly as it was agreed - the
-        change stops at the report. And a part on no order at all, ticked
-        Quote after the last quotation was confirmed, say, is quoted the
-        way a newly added one is.
+        that has been confirmed never gets here: its line is closed on the
+        report and refuses the edit - see SpareRequested.infinity_locked.
+        And a part on no order at all, ticked Quote after the last
+        quotation was confirmed, say, is quoted the way a newly added one
+        is.
         """
         self.ensure_one()
         is_open = bool(self.sale_quotation_id) and self._quotation_is_open()

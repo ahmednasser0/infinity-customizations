@@ -12,14 +12,18 @@
                      need and the quantity takes the strip it needs and no
                      more. -->
                 <list editable="bottom">
-                    <field name="product_id" width="26%"/>
+                    <!-- A part on a confirmed order, or issued on a
+                         validated transfer, is closed: read by the three
+                         below. -->
+                    <field name="infinity_locked" column_invisible="1"/>
+                    <field name="product_id" width="26%" readonly="infinity_locked"/>
                     <field name="description" readonly="1" width="32%"/>
                     <field name="uom_id" readonly="1" width="12%"/>
-                    <field name="qty" width="16%"/>
+                    <field name="qty" width="16%" readonly="infinity_locked"/>
                     <!-- Ticked, the part is charged for and goes on the
                          quotation. Unticked, it is consumed under the
                          contract and goes out on a transfer instead. -->
-                    <field name="to_quotation" width="14%"/>
+                    <field name="to_quotation" width="14%" readonly="infinity_locked"/>
                 </list>
             </field>
         </record>
@@ -31,14 +35,15 @@
                 <form>
                     <sheet>
                         <group>
+                            <field name="infinity_locked" invisible="1"/>
                             <group>
-                                <field name="product_id"/>
+                                <field name="product_id" readonly="infinity_locked"/>
                                 <field name="description" readonly="1"/>
                             </group>
                             <group>
                                 <field name="uom_id" readonly="1"/>
-                                <field name="qty"/>
-                                <field name="to_quotation"/>
+                                <field name="qty" readonly="infinity_locked"/>
+                                <field name="to_quotation" readonly="infinity_locked"/>
                             </group>
                         </group>
                     </sheet>
