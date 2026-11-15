@@ -49,81 +49,37 @@ class SpareLine(models.AbstractModel):
             self.product_id.display_name or '',
         )
 
-    # Where the entries of one save wait to be posted. A form save reaches
-    # these tables as separate creates, writes and unlinks - one call each -
-    # and posting from every one of them put up to three messages in the
-    # chatter for a single press of Save. They are gathered here instead,
-    # the way mail's own field tracking gathers its changes, and posted once
-    # when the transaction is about to commit.
-    _LOG_KEY = 'infinity.spare_parts.log'
+    @api.model
+    def _infinity_log(self, by_report):
+        """One chatter entry per report, listing what happened to it.
 
-    # Which table comes first in the message.
-    _infinity_log_order = 0
-
-    # Fields whose change is a move between headings rather than an edit,
-    # and so is said as "moved from ..." instead of "field: old -> new".
-    _infinity_group_fields = ()
-
-    def _infinity_group(self):
-        """(order, heading) this line is listed under in the chatter.
-
-        No heading by default: the table is one list.
+        The list is built with Markup's own formatting, so a product called
+        'Drum & Belt <A4>' reaches the chatter as those words rather than as
+        broken markup or a hole in the page.
         """
-        return (0, None)
-
-    def _infinity_queue(self, entries):
-        """Hold (report, group, text) entries until the save is over."""
-        precommit = self.env.cr.precommit
-        queue = precommit.data.get(self._LOG_KEY)
-        if queue is None:
-            queue = precommit.data[self._LOG_KEY] = {}
-            # bound to no records: on unlink these lines are gone by then
-            precommit.add(self.browse()._infinity_flush_log)
-        for report, group, text in entries:
-            section = (self._infinity_log_order, self._infinity_section)
-            (queue.setdefault(report.id, {})
-                  .setdefault(section, {})
-                  .setdefault(group, [])
-                  .append(text))
-
-    def _infinity_flush_log(self):
-        """One chatter message per report, for everything this save did.
-
-        Built with Markup's own formatting, so a product called
-        'Drum & Belt <A4>' reaches the chatter as those words rather than
-        as broken markup or a hole in the page.
-        """
-        queue = self.env.cr.precommit.data.pop(self._LOG_KEY, {})
-        Report = self.env['infinity.technical.report']
-        for report_id, sections in queue.items():
-            report = Report.browse(report_id).exists()
-            if not report:
-                # the report itself went in the same save
-                continue
-            body = Markup('')
-            for (_order, section), groups in sorted(sections.items()):
-                # 'edited' only once the visit has been closed out. Up to
-                # then the report is being written for the first time, and
-                # every line added while filling it in would be calling the
-                # first draft a correction.
-                heading = (_('%s edited', section) if report.visit_closed
-                           else section)
-                body += Markup('<p><b>%s</b></p>') % heading
-                for (_rank, label), items in sorted(
-                        groups.items(), key=lambda kv: kv[0][0]):
-                    if label:
-                        body += Markup('<p><i>%s</i></p>') % label
-                    body += Markup('<ul>%s</ul>') % Markup('').join(
-                        Markup('<li>%s</li>') % item for item in items)
-            report.message_post(body=body)
+        for report, items in by_report.items():
+            # 'edited' only once the visit has been closed out. Up to then
+            # the report is being written for the first time and nothing is
+            # being edited - every line added while filling it in would be
+            # calling the first draft a correction.
+            heading = (
+                _('%s edited', self._infinity_section) if report.visit_closed
+                else self._infinity_section
+            )
+            report.message_post(body=Markup('<p><b>%s</b></p><ul>%s</ul>') % (
+                heading,
+                Markup('').join(Markup('<li>%s</li>') % item for item in items),
+            ))
 
     @api.model_create_multi
     def create(self, vals_list):
         lines = super().create(vals_list)
-        self._infinity_queue(
-            (line.report_id, line._infinity_group(),
-             _('added: %s', line._infinity_describe()))
-            for line in lines if line.report_id)
+        by_report = {}
+        for line in lines:
+            if line.report_id:
+                by_report.setdefault(line.report_id, []).append(
+                    _('added: %s', line._infinity_describe()))
+        self._infinity_log(by_report)
         self._infinity_after_add(lines)
         return lines
 
@@ -152,20 +108,13 @@ class SpareLine(models.AbstractModel):
             line.id: {name: line[name] for name in changed}
             for line in self
         }
-        groups_before = {line.id: line._infinity_group() for line in self}
         result = super().write(vals)
 
-        entries = []
+        by_report = {}
         for line in self:
             was = before.get(line.id, {})
             parts = []
-            group = line._infinity_group()
-            old_group = groups_before.get(line.id, group)
-            if old_group != group and old_group[1]:
-                parts.append(_('moved from %s', old_group[1]))
             for name in changed:
-                if name in self._infinity_group_fields:
-                    continue
                 old, new = was.get(name), line[name]
                 if old == new:
                     continue
@@ -176,10 +125,10 @@ class SpareLine(models.AbstractModel):
                     self._infinity_show(field, new),
                 ))
             if parts and line.report_id:
-                entries.append((line.report_id, group, _(
-                    'changed: %s (%s)',
-                    line._infinity_describe(), ', '.join(parts))))
-        self._infinity_queue(entries)
+                by_report.setdefault(line.report_id, []).append(
+                    _('changed: %s (%s)',
+                      line._infinity_describe(), ', '.join(parts)))
+        self._infinity_log(by_report)
         self._infinity_after_change(self)
         return result
 
@@ -197,10 +146,12 @@ class SpareLine(models.AbstractModel):
 
     def unlink(self):
         # Said before the rows go: afterwards there is nothing left to read.
-        self._infinity_queue(
-            (line.report_id, line._infinity_group(),
-             _('removed: %s', line._infinity_describe()))
-            for line in self if line.report_id)
+        by_report = {}
+        for line in self:
+            if line.report_id:
+                by_report.setdefault(line.report_id, []).append(
+                    _('removed: %s', line._infinity_describe()))
+        self._infinity_log(by_report)
         self._infinity_before_remove(self)
         return super().unlink()
 
@@ -213,20 +164,6 @@ class SpareRequested(models.Model):
     # to_quotation is logged with the rest: which of the two ways a part
     # goes out is the sort of change somebody has to answer for afterwards.
     _infinity_logged = ('product_id', 'qty', 'to_quotation')
-    # ...but said as a move between the two headings, not as "Quote: yes ->
-    # no", because the heading is what the chatter is read by.
-    _infinity_group_fields = ('to_quotation',)
-    _infinity_log_order = 0
-
-    def _infinity_group(self):
-        """Out of Contract for a part charged for, In Contract otherwise.
-
-        Ticked Quote, the part is billed - it falls outside what the
-        contract covers. Unticked, it is consumed under the contract.
-        """
-        if self.to_quotation:
-            return (0, _('Out of Contract'))
-        return (1, _('In Contract'))
 
     # --- Closed once agreed or issued ---------------------------------------
     # A part on a confirmed sales order is something the customer agreed to
@@ -408,7 +345,6 @@ class SpareInstalled(models.Model):
     # that arises once it has actually gone in.
     _infinity_section = 'Spare Parts Installed'
     _infinity_logged = ('product_id', 'qty', 'part_source')
-    _infinity_log_order = 1
     _order = 'report_id, id'
 
     report_id = fields.Many2one(
